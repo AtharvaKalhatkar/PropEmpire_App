@@ -21,329 +21,358 @@ const numberToWords = (num) => {
 };
 
 export default function InvoicePreview({ data, profile, brokerageAmount, totalAmount }) {
-  // Premium Corporate Invoice Styles
+  // Styles mirroring the specific layout requested but with clean, professional typography and borders
   const styles = {
     wrapper: {
+      position: 'relative',
       fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
-      color: '#374151',
+      color: '#111827',
       width: '100%',
       minWidth: '800px',
       margin: '0 auto',
       backgroundColor: '#ffffff',
-      fontSize: '13px',
-      lineHeight: '1.6',
-      padding: '50px 60px',
+      fontSize: '12px',
+      lineHeight: '1.4',
+      border: '1px solid #4b5563', // Outer border matching the image
       boxSizing: 'border-box'
+    },
+    watermark: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundImage: `url(${logoImg})`,
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center 50%',
+      backgroundSize: '60%',
+      opacity: 0.04, // Very faint watermark
+      pointerEvents: 'none',
+      zIndex: 0
+    },
+    content: {
+      position: 'relative',
+      zIndex: 1
     },
     headerBox: {
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: '40px'
+      alignItems: 'center',
+      padding: '20px 30px'
     },
     logoImage: {
-      maxHeight: '70px',
+      maxHeight: '100px',
       maxWidth: '220px',
-      objectFit: 'contain',
-      marginBottom: '15px'
+      objectFit: 'contain'
     },
-    companyMeta: {
-      color: '#6b7280',
-      fontSize: '12px',
-      lineHeight: '1.5'
-    },
-    invoiceTitle: {
-      fontSize: '42px',
-      fontWeight: '300',
-      color: '#111827',
-      letterSpacing: '6px',
-      textTransform: 'uppercase',
-      margin: '0 0 15px 0',
-      lineHeight: '1'
-    },
-    invoiceMetaGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'auto auto',
-      gap: '8px 24px',
-      justifyContent: 'end',
+    agentSection: {
       textAlign: 'right'
     },
-    metaLabel: {
-      color: '#9ca3af',
+    agentName: {
+      fontSize: '26px',
+      fontWeight: '800',
+      color: '#0f4c81',
+      textTransform: 'uppercase',
+      marginBottom: '6px',
+      letterSpacing: '0.5px'
+    },
+    agentContactRow: {
+      fontSize: '13px',
       fontWeight: '600',
-      fontSize: '11px',
+      color: '#0f4c81',
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '4px',
+      marginBottom: '2px'
+    },
+    taxBanner: {
+      backgroundColor: '#86aeb9', // Teal color from the image
+      color: '#000000',
+      textAlign: 'center',
+      fontWeight: '800',
+      fontSize: '20px',
+      padding: '8px 0',
+      borderTop: '2px solid #374151',
+      borderBottom: '2px solid #374151',
       textTransform: 'uppercase',
       letterSpacing: '1px'
     },
-    metaValue: {
-      color: '#111827',
+    invoiceMetaRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      padding: '6px 30px',
+      borderBottom: '2px solid #374151',
+      fontWeight: '700',
+      fontSize: '14px'
+    },
+    toSection: {
+      padding: '10px 30px',
+      borderBottom: '1px solid #374151',
+      fontSize: '12px'
+    },
+    detailsBlock: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      padding: '10px 30px',
+      borderBottom: '1px solid #374151',
+      fontSize: '10px',
       fontWeight: '600',
-      fontSize: '13px'
-    },
-    divider: {
-      border: 'none',
-      borderTop: '1px solid #e5e7eb',
-      margin: '30px 0'
-    },
-    sectionLabel: {
-      color: '#9ca3af',
-      fontWeight: '700',
-      fontSize: '11px',
-      textTransform: 'uppercase',
-      letterSpacing: '1px',
-      marginBottom: '8px'
-    },
-    clientName: {
-      fontSize: '22px',
-      fontWeight: '700',
-      color: '#111827',
-      marginBottom: '4px'
-    },
-    clientDetails: {
-      color: '#4b5563',
-      fontSize: '13px',
-      lineHeight: '1.6'
+      lineHeight: '1.4'
     },
     table: {
       width: '100%',
       borderCollapse: 'collapse',
-      marginTop: '40px',
-      marginBottom: '30px'
+      textAlign: 'left'
     },
     th: {
-      borderBottom: '2px solid #111827',
-      color: '#111827',
-      padding: '12px 8px',
-      textAlign: 'left',
-      fontWeight: '700',
-      fontSize: '12px',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px'
+      borderBottom: '2px solid #374151',
+      borderRight: '1px solid #374151',
+      padding: '12px 10px',
+      fontWeight: '800',
+      fontSize: '14px',
+      textAlign: 'center'
     },
-    thRight: {
-      borderBottom: '2px solid #111827',
-      color: '#111827',
-      padding: '12px 8px',
-      textAlign: 'right',
-      fontWeight: '700',
-      fontSize: '12px',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px'
+    thLast: {
+      borderBottom: '2px solid #374151',
+      padding: '12px 10px',
+      fontWeight: '800',
+      fontSize: '14px',
+      textAlign: 'center'
     },
     td: {
-      padding: '24px 8px',
-      borderBottom: '1px solid #f3f4f6',
+      borderRight: '1px solid #374151',
+      padding: '10px',
       verticalAlign: 'top'
     },
-    tdRight: {
-      padding: '24px 8px',
-      borderBottom: '1px solid #f3f4f6',
+    tdLast: {
+      padding: '10px',
       verticalAlign: 'top',
-      textAlign: 'right'
-    },
-    itemTitle: {
-      fontSize: '15px',
-      fontWeight: '600',
-      color: '#111827',
-      marginBottom: '6px'
-    },
-    itemDetail: {
-      color: '#6b7280',
-      fontSize: '13px',
-      display: 'flex',
-      gap: '4px'
-    },
-    totalsContainer: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginTop: '10px'
-    },
-    paymentInfoBox: {
-      width: '50%',
-      paddingRight: '40px'
-    },
-    totalsBox: {
-      width: '350px'
-    },
-    totalRow: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: '12px 8px',
-      color: '#4b5563',
+      textAlign: 'center',
+      fontWeight: '700',
       fontSize: '14px'
     },
-    grandTotalRow: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: '16px 8px',
-      marginTop: '8px',
-      borderTop: '2px solid #111827',
-      borderBottom: '2px solid #111827',
-      color: '#111827',
+    particularsGrid: {
+      display: 'grid',
+      gridTemplateColumns: '150px auto',
+      gap: '4px 12px',
+      marginTop: '15px',
+      paddingLeft: '20px',
+      fontSize: '12px'
+    },
+    totalsRow: {
+      borderTop: '2px solid #374151',
+      borderBottom: '1px solid #374151'
+    },
+    totalsLabel: {
+      padding: '10px',
+      textAlign: 'center',
       fontWeight: '800',
-      fontSize: '20px'
+      fontSize: '15px'
     },
     amountWords: {
-      marginTop: '30px',
-      padding: '16px',
-      backgroundColor: '#f8fafc',
-      borderRadius: '4px',
-      borderLeft: '3px solid #cbd5e1'
-    },
-    signBox: {
-      marginTop: '80px',
-      display: 'flex',
-      justifyContent: 'flex-end'
-    },
-    signLine: {
-      width: '250px',
-      borderTop: '1px solid #9ca3af',
-      paddingTop: '8px',
+      padding: '8px 30px',
+      borderBottom: '1px solid #374151',
       textAlign: 'center',
-      color: '#4b5563',
-      fontSize: '12px',
-      fontWeight: '600',
-      textTransform: 'uppercase',
-      letterSpacing: '1px'
+      fontWeight: '500',
+      fontSize: '13px'
+    },
+    footerSection: {
+      padding: '15px 30px',
+      fontSize: '11px',
+      lineHeight: '1.6'
+    },
+    bankRow: {
+      display: 'grid',
+      gridTemplateColumns: '140px auto',
+      gap: '8px',
+      marginTop: '6px'
+    },
+    signatureBox: {
+      textAlign: 'center',
+      marginTop: '-20px', // Pull it up a bit to align with bank details horizontally
+      float: 'right',
+      width: '300px'
     }
   };
 
   return (
     <div style={styles.wrapper}>
+      <div style={styles.watermark}></div>
       
-      {/* Header Area */}
-      <div style={styles.headerBox}>
-        <div>
-          <img src={logoImg} alt="PropEmpire" style={styles.logoImage} />
-          <div style={styles.companyMeta}>
-            {profile.agentName && <div style={{ fontWeight: '600', color: '#111827' }}>{profile.agentName}</div>}
-            {profile.email && <div>{profile.email}</div>}
-            {profile.mobile && <div>+91 {profile.mobile}</div>}
-            {profile.reraNo && <div style={{ marginTop: '4px' }}>RERA: {profile.reraNo}</div>}
-          </div>
-        </div>
-        
-        <div style={{ textAlign: 'right' }}>
-          <h1 style={styles.invoiceTitle}>Invoice</h1>
-          <div style={styles.invoiceMetaGrid}>
-            <div style={styles.metaLabel}>Invoice No</div>
-            <div style={styles.metaValue}>{data.invoiceNo}</div>
-            
-            <div style={styles.metaLabel}>Date</div>
-            <div style={styles.metaValue}>{data.date ? new Date(data.date).toLocaleDateString('en-GB') : ''}</div>
-          </div>
-        </div>
-      </div>
-
-      <hr style={styles.divider} />
-
-      {/* Bill To */}
-      <div>
-        <div style={styles.sectionLabel}>Billed To</div>
-        <div style={styles.clientName}>{data.customerName || 'Client Name'}</div>
-        <div style={styles.clientDetails}>
-          {data.billedToAddress && <div>{data.billedToAddress}</div>}
-          {data.billedToGstin && <div style={{ marginTop: '4px', color: '#111827', fontWeight: '600' }}>GSTIN: {data.billedToGstin}</div>}
-        </div>
-      </div>
-
-      {/* Items Table */}
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <th style={styles.th}>Description</th>
-            <th style={styles.thRight}>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style={styles.td}>
-              <div style={styles.itemTitle}>Professional Real Estate Brokerage</div>
-              <div style={styles.itemDetail}>
-                <span style={{ fontWeight: '600', color: '#374151' }}>Project:</span> {data.projectName}
-              </div>
-              <div style={styles.itemDetail}>
-                <span style={{ fontWeight: '600', color: '#374151' }}>Unit details:</span> {data.tower} - {data.flatNo}
-              </div>
-              <div style={styles.itemDetail}>
-                <span style={{ fontWeight: '600', color: '#374151' }}>Agreement Value:</span> ₹{Number(data.agreementValue).toLocaleString('en-IN')}
-              </div>
-              <div style={styles.itemDetail}>
-                <span style={{ fontWeight: '600', color: '#374151' }}>Brokerage Fee:</span> {data.brokeragePercent}%
-              </div>
-            </td>
-            <td style={{ ...styles.tdRight, fontWeight: '600', color: '#111827', fontSize: '15px' }}>
-              ₹ {brokerageAmount.toLocaleString('en-IN')}
-            </td>
-          </tr>
-          {Number(data.executiveBonus) > 0 && (
-            <tr>
-              <td style={styles.td}>
-                <div style={styles.itemTitle}>Executive Bonus / Additional Services</div>
-              </td>
-              <td style={{ ...styles.tdRight, fontWeight: '600', color: '#111827', fontSize: '15px' }}>
-                ₹ {Number(data.executiveBonus).toLocaleString('en-IN')}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* Totals & Payments */}
-      <div style={styles.totalsContainer}>
-        
-        <div style={styles.paymentInfoBox}>
-          <div style={styles.sectionLabel}>Payment Instructions</div>
-          <div style={{ color: '#4b5563', fontSize: '13px', lineHeight: '1.8' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr' }}>
-              <div style={{ fontWeight: '600', color: '#374151' }}>Bank Name:</div>
-              <div>{profile.bankName || 'N/A'}</div>
-              
-              <div style={{ fontWeight: '600', color: '#374151' }}>Account Name:</div>
-              <div>{profile.bankFavouringName || 'N/A'}</div>
-              
-              <div style={{ fontWeight: '600', color: '#374151' }}>Account No:</div>
-              <div>{profile.accountNo || 'N/A'} ({profile.accountType || 'Saving'})</div>
-              
-              <div style={{ fontWeight: '600', color: '#374151' }}>IFSC Code:</div>
-              <div>{profile.ifscCode || 'N/A'}</div>
-
-              {profile.panNo && (
-                <>
-                  <div style={{ fontWeight: '600', color: '#374151' }}>PAN No:</div>
-                  <div>{profile.panNo}</div>
-                </>
-              )}
-            </div>
+      <div style={styles.content}>
+        {/* Header */}
+        <div style={styles.headerBox}>
+          <div style={{ flex: 1 }}>
+            <img src={logoImg} alt="PropEmpire" style={styles.logoImage} />
           </div>
           
-          <div style={styles.amountWords}>
-            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Amount in Words</div>
-            <div style={{ fontStyle: 'italic', color: '#111827', fontWeight: '500' }}>{numberToWords(totalAmount)}</div>
+          <div style={styles.agentSection}>
+            <div style={styles.agentName}>{profile.agentName || 'SAURABH SHIVAJI GADE'}</div>
+            <div style={styles.agentContactRow}>
+              <span style={{ color: '#111827' }}>Email id :-</span> {profile.email || 'saurabhgade32@gmail.com'}
+            </div>
+            <div style={styles.agentContactRow}>
+              <span style={{ color: '#111827' }}>Mobile :-</span> {profile.mobile || '9730953309'}
+            </div>
           </div>
         </div>
 
-        <div style={styles.totalsBox}>
-          <div style={styles.totalRow}>
-            <span>Subtotal</span>
-            <span style={{ fontWeight: '600', color: '#111827' }}>₹ {totalAmount.toLocaleString('en-IN')}</span>
+        {/* Banner */}
+        <div style={styles.taxBanner}>TAX INVOICE</div>
+
+        {/* Invoice Meta */}
+        <div style={styles.invoiceMetaRow}>
+          <div>Invoice No :- {data.invoiceNo}</div>
+          <div>Date :- {data.date ? new Date(data.date).toLocaleDateString('en-GB') : ''}</div>
+        </div>
+
+        {/* Bill To */}
+        <div style={styles.toSection}>
+          <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '4px' }}>
+            To - <span style={{ fontWeight: '600' }}>{data.customerName || 'Client Name'}</span>
           </div>
-          <div style={styles.grandTotalRow}>
-            <span>Total Due</span>
-            <span>₹ {totalAmount.toLocaleString('en-IN')}</span>
+          <div style={{ paddingLeft: '32px', color: '#374151', lineHeight: '1.5' }}>
+            {data.billedToAddress && <div>{data.billedToAddress}</div>}
+            {data.billedToGstin && <div style={{ fontWeight: '700', marginTop: '4px', color: '#000' }}>GSTIN : {data.billedToGstin}</div>}
           </div>
         </div>
 
+        {/* Channel Partner Details Block */}
+        <div style={styles.detailsBlock}>
+          <div>
+            <div>• Channel Partner REAP ID : NA</div>
+            <div>• Channel Partner GaTIN : NA</div>
+            <div>• Service Account Code : MAHARASHTRA</div>
+            <div style={{ fontSize: '9px', fontStyle: 'italic', marginTop: '2px' }}>
+              ( Building sales on a fee / commission basis or contract basis )<br/>
+              Place of flat sold ( it should mention state where service is rendered )
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div>Channel Partner Rera No :- <span style={{ fontWeight: '500' }}>{profile.reraNo || 'NA'}</span></div>
+            <div style={{ marginTop: '8px' }}>Channel Partner Pan No :- <span style={{ fontWeight: '500' }}>{profile.panNo || 'NA'}</span></div>
+          </div>
+        </div>
+
+        {/* Main Table */}
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={{ ...styles.th, width: '60px' }}>Sr.No</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>Particulars</th>
+              <th style={{ ...styles.th, width: '100px' }}>Tax Rate</th>
+              <th style={styles.thLast}>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={{ ...styles.td, textAlign: 'center', fontWeight: '600' }}>1.</td>
+              <td style={styles.td}>
+                <div style={{ fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '8px', height: '8px', backgroundColor: '#000' }}></div>
+                  Description of service provided
+                </div>
+                
+                <div style={styles.particularsGrid}>
+                  <div>Customer Name</div>
+                  <div>:- {data.customerName}</div>
+                  
+                  <div>Project Name.</div>
+                  <div>:- {data.projectName}</div>
+                  
+                  <div>Tower</div>
+                  <div>:- {data.tower}</div>
+                  
+                  <div>Flat No</div>
+                  <div>:- {data.flatNo}</div>
+                  
+                  <div>Agreement Value (AV)</div>
+                  <div>:- {Number(data.agreementValue).toLocaleString('en-IN')} /-</div>
+                  
+                  <div>Brokerage</div>
+                  <div>:- {data.brokeragePercent} %</div>
+                </div>
+              </td>
+              <td style={{ ...styles.td, textAlign: 'center', fontWeight: '800', fontSize: '14px', verticalAlign: 'middle' }}>
+                {data.brokeragePercent} %
+              </td>
+              <td style={{ ...styles.tdLast, verticalAlign: 'bottom' }}>
+                <div style={{ borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '4px' }}>
+                  {brokerageAmount.toLocaleString('en-IN')} /-
+                </div>
+                <div>{brokerageAmount.toLocaleString('en-IN')} /-</div>
+              </td>
+            </tr>
+            
+            {Number(data.executiveBonus) > 0 && (
+              <tr>
+                <td style={{ ...styles.td, textAlign: 'center', fontWeight: '600' }}>2.</td>
+                <td style={styles.td}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '150px auto', gap: '12px', paddingLeft: '20px' }}>
+                    <div>Executive Bonus</div>
+                    <div>:- {Number(data.executiveBonus).toLocaleString('en-IN')} /-</div>
+                  </div>
+                </td>
+                <td style={styles.td}></td>
+                <td style={{ ...styles.tdLast, verticalAlign: 'middle' }}>
+                  {Number(data.executiveBonus).toLocaleString('en-IN')} /-
+                </td>
+              </tr>
+            )}
+
+            <tr style={styles.totalsRow}>
+              <td colSpan="3" style={{ ...styles.td, ...styles.totalsLabel, borderRight: '1px solid #374151' }}>
+                Total
+              </td>
+              <td style={{ ...styles.tdLast, fontWeight: '800', fontSize: '16px' }}>
+                {totalAmount.toLocaleString('en-IN')}/-
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Amount in words */}
+        <div style={styles.amountWords}>
+          Amount in words :- {numberToWords(totalAmount)}
+        </div>
+
+        {/* Footer */}
+        <div style={styles.footerSection}>
+          <div style={{ display: 'grid', gridTemplateColumns: '220px auto', gap: '8px', fontWeight: '700', fontSize: '12px', marginBottom: '15px' }}>
+            <div>Channel Partner Cheque favouring Name</div>
+            <div>: {profile.bankFavouringName}</div>
+            
+            <div style={{ color: '#4b5563', fontWeight: '600' }}>As Per RERA Certificate Name</div>
+            <div style={{ color: '#4b5563', fontWeight: '600' }}>: {profile.agentName}</div>
+          </div>
+          
+          <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '6px' }}>
+            For NEFT / RTGS - Bank A/C details.........
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px', fontSize: '10px', color: '#374151', marginBottom: '15px' }}>
+            <div>Bank Name & Address :-</div>
+            <div>{profile.bankName}</div>
+          </div>
+
+          <div style={styles.bankRow}>
+            <div style={{ fontWeight: '800' }}>Account Type</div>
+            <div style={{ fontWeight: '800' }}>: {profile.accountType}</div>
+            
+            <div style={{ fontWeight: '800' }}>Account No</div>
+            <div style={{ fontWeight: '800' }}>: {profile.accountNo}</div>
+            
+            <div style={{ fontWeight: '800' }}>IFSC Code</div>
+            <div style={{ fontWeight: '800' }}>: {profile.ifscCode}</div>
+          </div>
+
+          <div style={styles.signatureBox}>
+            <div style={{ fontWeight: '700', fontSize: '12px' }}>(Stampandsignatureofchannelpartner)</div>
+            <div style={{ fontWeight: '800', fontSize: '12px', marginTop: '4px' }}>Authorised Signatory</div>
+          </div>
+          
+        </div>
       </div>
-
-      {/* Signatory */}
-      <div style={styles.signBox}>
-        <div style={styles.signLine}>
-          Authorized Signatory
-        </div>
-      </div>
-
     </div>
   );
 }
