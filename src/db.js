@@ -260,5 +260,27 @@ export async function saveInvoice(invoiceData) {
   return payload;
 }
 
+export async function deleteInvoice(id) {
+  if (supabase) {
+    const { error } = await supabase
+      .from('invoices')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting invoice:", error);
+      throw error;
+    }
+    await localforage.removeItem('invoices_cache');
+    return true;
+  }
+
+  // Offline mode
+  const invoices = (await localforage.getItem('invoices_cache')) || [];
+  const filtered = invoices.filter(inv => inv.id !== id);
+  await localforage.setItem('invoices_cache', filtered);
+  return true;
+}
+
 // Export supabase for any direct use
 export { supabase };

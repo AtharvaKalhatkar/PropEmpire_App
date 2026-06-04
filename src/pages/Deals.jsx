@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, Download, Calendar, DollarSign, Eye, X, Printer, MessageCircle, Mail } from 'lucide-react';
-import { getInvoices, getProfile } from '../db';
+import { getInvoices, getProfile, deleteInvoice } from '../db';
 import InvoicePreview from '../components/InvoicePreview';
 import { generatePdfBlobFromElement, downloadPdfBlob } from '../utils/pdf';
 import * as XLSX from 'xlsx';
@@ -15,8 +15,12 @@ export default function Deals() {
   const [viewingInvoice, setViewingInvoice] = useState(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-  useEffect(() => {
+  const loadInvoices = () => {
     getInvoices().then(setInvoices);
+  };
+
+  useEffect(() => {
+    loadInvoices();
     getProfile().then(setProfile);
   }, []);
 
@@ -149,6 +153,30 @@ export default function Deals() {
     }
   };
 
+  const handleDeleteInvoice = async (invoice) => {
+    if (window.confirm(`Are you sure you want to delete invoice #${invoice.invoiceNo} for ${invoice.customerName}?`)) {
+      try {
+        await deleteInvoice(invoice.id);
+        loadInvoices();
+      } catch (e) {
+        alert("Failed to delete invoice.");
+      }
+    }
+  };
+
+  const handleClearAllInvoices = async () => {
+    if (window.confirm("WARNING: Are you sure you want to delete ALL invoices? This action cannot be undone.")) {
+      try {
+        for (const inv of invoices) {
+          await deleteInvoice(inv.id);
+        }
+        loadInvoices();
+      } catch (e) {
+        alert("Failed to delete all invoices.");
+      }
+    }
+  };
+
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '4rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -166,6 +194,11 @@ export default function Deals() {
           <button className="btn btn-secondary" onClick={handleExportExcel} style={{ padding: '0.5rem 1rem' }}>
             <FileText size={18} /> Export
           </button>
+          {invoices.length > 0 && (
+            <button className="btn btn-secondary" onClick={handleClearAllInvoices} style={{ padding: '0.5rem 1rem', color: '#ef4444', borderColor: '#ef4444' }}>
+              <X size={18} /> Clear All
+            </button>
+          )}
         </div>
       </div>
 
@@ -207,13 +240,22 @@ export default function Deals() {
                     <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{inv.projectName}</td>
                     <td style={{ padding: '1rem', fontWeight: '600', color: 'var(--primary-blue)' }}>₹ {calculateTotal(inv).toLocaleString('en-IN')}</td>
                     <td style={{ padding: '1rem', textAlign: 'center' }}>
-                      <button 
-                        onClick={() => setViewingInvoice(inv)} 
-                        className="btn btn-secondary" 
-                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                      >
-                        <Eye size={14} /> View
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <button 
+                          onClick={() => setViewingInvoice(inv)} 
+                          className="btn btn-secondary" 
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                        >
+                          <Eye size={14} /> View
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteInvoice(inv)} 
+                          className="btn btn-secondary" 
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#ef4444', borderColor: '#fca5a5', backgroundColor: '#fef2f2' }}
+                        >
+                          <X size={14} /> Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
