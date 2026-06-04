@@ -68,7 +68,7 @@ export default function Settings() {
           <label className="form-label">Agent Name</label>
           <input type="text" className="form-input" name="agentName" value={profile.agentName} onChange={handleChange} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="form-grid-2">
           <div className="form-group">
             <label className="form-label">Email ID</label>
             <input type="email" className="form-input" name="email" value={profile.email} onChange={handleChange} />
@@ -78,7 +78,7 @@ export default function Settings() {
             <input type="text" className="form-input" name="mobile" value={profile.mobile} onChange={handleChange} />
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="form-grid-2">
           <div className="form-group">
             <label className="form-label">RERA Number</label>
             <input type="text" className="form-input" name="reraNo" value={profile.reraNo} onChange={handleChange} />
@@ -100,7 +100,7 @@ export default function Settings() {
           <label className="form-label">Bank Name & Branch Address</label>
           <textarea className="form-input" name="bankName" rows="2" value={profile.bankName} onChange={handleChange}></textarea>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+        <div className="form-grid-3">
           <div className="form-group">
             <label className="form-label">Account Type</label>
             <select className="form-input" name="accountType" value={profile.accountType} onChange={handleChange}>
@@ -122,7 +122,7 @@ export default function Settings() {
         <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <ImageIcon size={20} color="var(--primary-blue)" /> Branding & Payments (For Invoices)
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+        <div className="form-grid-2" style={{ gap: '2rem' }}>
           
           {/* Logo Upload */}
           <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

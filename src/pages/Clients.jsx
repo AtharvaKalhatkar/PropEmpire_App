@@ -93,7 +93,7 @@ export default function Clients() {
         <form className="card animate-fade-in" style={{ marginBottom: '2rem' }} onSubmit={handleAdd}>
           <h2 style={{ fontSize: '1.125rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>New Customer Full Details</h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
             {/* Basic Info */}
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Full Name *</label>

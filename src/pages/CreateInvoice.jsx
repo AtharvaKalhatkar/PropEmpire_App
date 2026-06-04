@@ -171,7 +171,7 @@ export default function CreateInvoice({ onNavigate }) {
 
       <div className="card" style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Invoice Details</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="form-grid-2">
           <div className="form-group">
             <label className="form-label">Invoice No.</label>
             <input type="text" className="form-input" name="invoiceNo" value={formData.invoiceNo} onChange={handleChange} />
@@ -201,7 +201,7 @@ export default function CreateInvoice({ onNavigate }) {
 
       <div className="card" style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Particulars (Client & Property)</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Customer Name</label>
             <input type="text" className="form-input" name="customerName" value={formData.customerName} onChange={handleChange} />
@@ -216,7 +216,7 @@ export default function CreateInvoice({ onNavigate }) {
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>* Phone & Email won't be displayed on the final invoice PDF.</span>
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+        <div className="form-grid-3">
           <div className="form-group">
             <label className="form-label">Project Name</label>
             <input type="text" className="form-input" name="projectName" value={formData.projectName} onChange={handleChange} />
@@ -234,7 +234,7 @@ export default function CreateInvoice({ onNavigate }) {
 
       <div className="card">
         <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Financials</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div className="form-grid-2">
           <div className="form-group">
             <label className="form-label">Agreement Value (₹)</label>
             <input type="number" className="form-input" name="agreementValue" value={formData.agreementValue} onChange={handleChange} />
