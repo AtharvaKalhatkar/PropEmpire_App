@@ -2,13 +2,13 @@ import React from 'react';
 import logoImg from '../assets/COMPANY_LOGO.png';
 
 const numberToWords = (num) => {
-  if (num === 0) return 'Zero';
+  if (num === 0) return 'Zero Only';
   const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
   const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
   const inWords = (n) => {
     if ((n = n.toString()).length > 9) return 'overflow';
     let nArray = ('000000000' + n).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-    if (!nArray) return; 
+    if (!nArray) return;
     let str = '';
     str += (nArray[1] != 0) ? (a[Number(nArray[1])] || b[nArray[1][0]] + ' ' + a[nArray[1][1]]) + 'Crore ' : '';
     str += (nArray[2] != 0) ? (a[Number(nArray[2])] || b[nArray[2][0]] + ' ' + a[nArray[2][1]]) + 'Lakh ' : '';
@@ -17,10 +17,13 @@ const numberToWords = (num) => {
     str += (nArray[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(nArray[5])] || b[nArray[5][0]] + ' ' + a[nArray[5][1]]) : '';
     return str.trim();
   };
-  return inWords(num);
+  return inWords(Math.round(num)) + ' Only';
 };
 
 export default function InvoicePreview({ data, profile, brokerageAmount, totalAmount }) {
+  // Use uploaded logo from profile if available, otherwise use default
+  const displayLogo = profile?.logoImage || logoImg;
+
   // All inline styles for A4 PDF rendering — no external CSS dependency
   const s = {
     page: {
@@ -41,8 +44,12 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
       overflow: 'hidden',
     },
     watermark: {
-      position: 'absolute', top: '55%', left: '50%', transform: 'translate(-50%, -50%)',
-      opacity: 0.08, pointerEvents: 'none', zIndex: 0,
+      position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+      opacity: 0.07, pointerEvents: 'none', zIndex: 0,
+      width: '340px', height: '340px',
+    },
+    watermarkImg: {
+      width: '100%', height: '100%', objectFit: 'contain',
     },
     inner: {
       position: 'relative', zIndex: 1,
@@ -130,16 +137,19 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
   return (
     <div style={s.page}>
       <div style={s.border}>
-        <div style={s.watermark} />
+        {/* ======= WATERMARK LOGO (CENTER) ======= */}
+        <div style={s.watermark}>
+          <img src={displayLogo} alt="" style={s.watermarkImg} />
+        </div>
         <div style={s.inner}>
 
           {/* ======= HEADER ======= */}
           <div style={s.header}>
-            <img src={logoImg} alt="PropEmpire" style={s.logo} />
+            <img src={displayLogo} alt="PropEmpire" style={s.logo} />
             <div style={s.agentBlock}>
-              <div style={s.agentName}>{profile.agentName || 'SAURABH SHIVAJI GADE'}</div>
-              <div style={s.agentContact}>Email id :- {profile.email || 'saurabhgade32@gmail.com'}</div>
-              <div style={s.agentContact}>Mobile :- {profile.mobile || '9730953309'}</div>
+              <div style={s.agentName}>{profile?.agentName || 'SAURABH SHIVAJI GADE'}</div>
+              <div style={s.agentContact}>Email id :- {profile?.email || 'saurabhgade32@gmail.com'}</div>
+              <div style={s.agentContact}>Mobile :- {profile?.mobile || '9730953309'}</div>
             </div>
           </div>
 
@@ -183,8 +193,8 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
               </div>
             </div>
             <div style={s.cpRight}>
-              <div>Channel Partner Rera No :- {profile.reraNo || 'A52100041995'}</div>
-              <div>Channel Partner Pan No :- {profile.panNo || 'DDHPG6896K'}</div>
+              <div>Channel Partner Rera No :- {profile?.reraNo || 'A52100041995'}</div>
+              <div>Channel Partner Pan No :- {profile?.panNo || 'DDHPG6896K'}</div>
             </div>
           </div>
 
@@ -211,7 +221,7 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
                     <div style={s.pItem}><span>Project Name.</span><span>:-</span><span style={{ fontWeight: 'bold' }}>{data.projectName}</span></div>
                     <div style={s.pItem}><span>Tower</span><span>:-</span><span style={{ fontWeight: 'bold' }}>{data.tower}</span></div>
                     <div style={s.pItem}><span>Flat No</span><span>:-</span><span style={{ fontWeight: 'bold' }}>{data.flatNo}</span></div>
-                    <div style={s.pItem}><span>Considerable Value</span><span>:-</span><span style={{ fontWeight: 'bold' }}>{Number(data.agreementValue).toLocaleString('en-IN')} /-</span></div>
+                    <div style={s.pItem}><span>Agreement Value (AV)</span><span>:-</span><span style={{ fontWeight: 'bold' }}>{Number(data.agreementValue).toLocaleString('en-IN')} /-</span></div>
                     <div style={s.pItem}><span>Brokerage</span><span>:-</span><span style={{ fontWeight: 'bold' }}>{data.brokeragePercent} %</span></div>
                   </div>
                 </td>
@@ -256,8 +266,8 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
 
               {/* Amount in words */}
               <tr>
-                <td colSpan="4" style={{ ...s.td, fontWeight: 'bold', fontSize: '12px', padding: '6px 10px' }}>
-                  Amount in words :- {numberToWords(totalAmount)}
+                <td colSpan="4" style={{ ...s.td, fontWeight: 'bold', fontSize: '12px', padding: '6px 10px', textAlign: 'center' }}>
+                  Amount in words :-  {numberToWords(totalAmount)}
                 </td>
               </tr>
             </tbody>
@@ -267,21 +277,21 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
           <div style={s.footer}>
             <div style={s.bankBlock}>
               <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '2px' }}>
-                Channel Partner Cheque favouring Name : {profile.bankFavouringName || 'Saurabh Shivaji Gade'}
+                Channel Partner Cheque favouring Name : {profile?.bankFavouringName || profile?.agentName || 'Saurabh Shivaji Gade'}
               </div>
               <div style={{ fontSize: '12px', marginBottom: '6px' }}>
-                As Per RERA Certificate Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {profile.agentName || 'Saurabh Shivaji Gade'}
+                As Per RERA Certificate Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {profile?.agentName || 'Saurabh Shivaji Gade'}
               </div>
               <div style={{ fontWeight: 'bold', textDecoration: 'underline', marginBottom: '3px', fontSize: '12px' }}>
                 For NEFT / RTGS - Bank A/C details.........
               </div>
               <div style={{ fontSize: '10px', color: '#333', marginBottom: '6px', lineHeight: 1.3 }}>
-                Bank Name & Address :- {profile.bankName || 'HDFC Bank,S No, 648 Pune, Pune - Ahmednagar Hwy'}
+                Bank Name & Address :- {profile?.bankName || 'HDFC Bank,S No, 648 Pune, Pune - Ahmednagar Hwy'}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '110px auto', gap: '2px', fontSize: '11.5px', fontWeight: 'bold' }}>
-                <div>Account Type</div><div>: {profile.accountType || 'Saving'}</div>
-                <div>Account No</div><div>: {profile.accountNo || '50100560608282'}</div>
-                <div>IFSC Code</div><div>: {profile.ifscCode || 'HDFC0009332'}</div>
+                <div>Account Type</div><div>: {profile?.accountType || 'Saving'}</div>
+                <div>Account No</div><div>: {profile?.accountNo || '50100560608282'}</div>
+                <div>IFSC Code</div><div>: {profile?.ifscCode || 'HDFC0009332'}</div>
               </div>
             </div>
             <div style={s.sigBlock}>

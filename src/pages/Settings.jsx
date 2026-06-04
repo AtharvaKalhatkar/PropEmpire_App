@@ -7,20 +7,23 @@ export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    const defaults = {
+      agentName: '',
+      email: '',
+      mobile: '',
+      reraNo: '',
+      panNo: '',
+      bankFavouringName: '',
+      bankName: '',
+      accountType: 'Saving',
+      accountNo: '',
+      ifscCode: '',
+      logoImage: ''
+    };
     getProfile().then(data => {
-      setProfile(data || {
-        agentName: '',
-        email: '',
-        mobile: '',
-        reraNo: '',
-        panNo: '',
-        bankFavouringName: '',
-        bankName: '',
-        accountType: 'Saving',
-        accountNo: '',
-        ifscCode: '',
-        logoImage: ''
-      });
+      setProfile({ ...defaults, ...(data || {}) });
+    }).catch(() => {
+      setProfile(defaults);
     });
   }, []);
 

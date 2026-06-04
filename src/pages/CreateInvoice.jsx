@@ -25,13 +25,29 @@ export default function CreateInvoice({ onNavigate }) {
   });
 
   useEffect(() => {
-    getProfile().then(setProfile);
+    getProfile().then(data => {
+      setProfile(data || {
+        agentName: '', email: '', mobile: '',
+        reraNo: '', panNo: '',
+        bankFavouringName: '', bankName: '',
+        accountType: 'Saving', accountNo: '', ifscCode: '',
+        logoImage: ''
+      });
+    }).catch(() => {
+      setProfile({
+        agentName: '', email: '', mobile: '',
+        reraNo: '', panNo: '',
+        bankFavouringName: '', bankName: '',
+        accountType: 'Saving', accountNo: '', ifscCode: '',
+        logoImage: ''
+      });
+    });
     getInvoices().then(invoices => {
       // Auto-increment invoice number based on existing
       if (invoices.length > 0) {
         setFormData(prev => ({ ...prev, invoiceNo: (invoices.length + 1).toString() }));
       }
-    });
+    }).catch(() => {});
   }, []);
 
   const handleChange = (e) => {
