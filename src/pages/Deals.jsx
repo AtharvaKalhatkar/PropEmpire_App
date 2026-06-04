@@ -21,7 +21,7 @@ export default function Deals() {
 
   useEffect(() => {
     loadInvoices();
-    getProfile().then(setProfile);
+    getProfile().then(p => setProfile(p || {}));
   }, []);
 
   // Filter invoices based on selected month (YYYY-MM format)
