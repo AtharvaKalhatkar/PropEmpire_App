@@ -1,5 +1,5 @@
 import React from 'react';
-import logoImg from '../assets/logo-new.png';
+import logoImg from '../assets/COMPANY_LOGO.png';
 
 const numberToWords = (num) => {
   if (num === 0) return 'Zero';

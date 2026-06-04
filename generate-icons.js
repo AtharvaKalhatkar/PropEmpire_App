@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 
-const input = 'src/assets/hero.png';
+const input = 'src/assets/COMPANY_LOGO.png';
 const outFavicon = 'public/favicon.png';
 const outApple = 'public/apple-touch-icon.png';
 const out192 = 'public/pwa-192x192.png';

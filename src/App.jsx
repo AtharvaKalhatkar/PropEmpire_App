@@ -5,7 +5,7 @@ import Deals from './pages/Deals';
 import CreateInvoice from './pages/CreateInvoice';
 import Clients from './pages/Clients';
 import Settings from './pages/Settings';
-import logoImg from './assets/logo-new.png';
+import logoImg from './assets/COMPANY_LOGO.png';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
