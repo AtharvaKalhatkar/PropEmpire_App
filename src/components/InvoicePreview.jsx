@@ -25,15 +25,15 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
   const styles = {
     wrapper: {
       position: 'relative',
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
-      color: '#111827',
+      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+      color: '#000000',
       width: '100%',
       minWidth: '800px',
       margin: '0 auto',
       backgroundColor: '#ffffff',
       fontSize: '12px',
       lineHeight: '1.4',
-      border: '1px solid #4b5563', // Outer border matching the image
+      border: '2px solid #000000', /* Thick outer border */
       boxSizing: 'border-box'
     },
     watermark: {
@@ -44,9 +44,9 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
       bottom: 0,
       backgroundImage: `url(${logoImg})`,
       backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'center 50%',
-      backgroundSize: '60%',
-      opacity: 0.04, // Very faint watermark
+      backgroundPosition: 'center 60%',
+      backgroundSize: '70%',
+      opacity: 0.04,
       pointerEvents: 'none',
       zIndex: 0
     },
@@ -58,66 +58,66 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '20px 30px'
+      padding: '20px 25px'
     },
     logoImage: {
-      maxHeight: '100px',
-      maxWidth: '220px',
+      maxHeight: '110px',
+      maxWidth: '240px',
       objectFit: 'contain'
     },
     agentSection: {
       textAlign: 'right'
     },
     agentName: {
-      fontSize: '26px',
+      fontSize: '28px',
       fontWeight: '800',
-      color: '#0f4c81',
+      color: '#0A2540',
       textTransform: 'uppercase',
-      marginBottom: '6px',
+      marginBottom: '8px',
       letterSpacing: '0.5px'
     },
     agentContactRow: {
       fontSize: '13px',
       fontWeight: '600',
-      color: '#0f4c81',
+      color: '#0A2540',
       display: 'flex',
       justifyContent: 'flex-end',
       gap: '4px',
-      marginBottom: '2px'
+      marginBottom: '4px'
     },
     taxBanner: {
-      backgroundColor: '#86aeb9', // Teal color from the image
+      backgroundColor: '#7ea7b3',
       color: '#000000',
       textAlign: 'center',
       fontWeight: '800',
       fontSize: '20px',
       padding: '8px 0',
-      borderTop: '2px solid #374151',
-      borderBottom: '2px solid #374151',
+      borderTop: '2px solid #000000',
+      borderBottom: '2px solid #000000',
       textTransform: 'uppercase',
       letterSpacing: '1px'
     },
     invoiceMetaRow: {
       display: 'flex',
       justifyContent: 'space-between',
-      padding: '6px 30px',
-      borderBottom: '2px solid #374151',
+      padding: '8px 25px',
+      borderBottom: '2px solid #000000',
       fontWeight: '700',
       fontSize: '14px'
     },
     toSection: {
-      padding: '10px 30px',
-      borderBottom: '1px solid #374151',
-      fontSize: '12px'
+      padding: '12px 25px',
+      borderBottom: '1px solid #000000',
+      fontSize: '13px'
     },
     detailsBlock: {
       display: 'flex',
       justifyContent: 'space-between',
-      padding: '10px 30px',
-      borderBottom: '1px solid #374151',
+      padding: '12px 25px',
+      borderBottom: '1px solid #000000',
       fontSize: '10px',
       fontWeight: '600',
-      lineHeight: '1.4'
+      lineHeight: '1.5'
     },
     table: {
       width: '100%',
@@ -125,27 +125,27 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
       textAlign: 'left'
     },
     th: {
-      borderBottom: '2px solid #374151',
-      borderRight: '1px solid #374151',
+      borderBottom: '2px solid #000000',
+      borderRight: '1px solid #000000',
       padding: '12px 10px',
       fontWeight: '800',
       fontSize: '14px',
       textAlign: 'center'
     },
     thLast: {
-      borderBottom: '2px solid #374151',
+      borderBottom: '2px solid #000000',
       padding: '12px 10px',
       fontWeight: '800',
       fontSize: '14px',
       textAlign: 'center'
     },
     td: {
-      borderRight: '1px solid #374151',
-      padding: '10px',
+      borderRight: '1px solid #000000',
+      padding: '15px 10px',
       verticalAlign: 'top'
     },
     tdLast: {
-      padding: '10px',
+      padding: '15px 10px',
       verticalAlign: 'top',
       textAlign: 'center',
       fontWeight: '700',
@@ -153,43 +153,43 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
     },
     particularsGrid: {
       display: 'grid',
-      gridTemplateColumns: '150px auto',
-      gap: '4px 12px',
+      gridTemplateColumns: '160px auto',
+      gap: '6px 12px',
       marginTop: '15px',
-      paddingLeft: '20px',
-      fontSize: '12px'
-    },
-    totalsRow: {
-      borderTop: '2px solid #374151',
-      borderBottom: '1px solid #374151'
-    },
-    totalsLabel: {
-      padding: '10px',
-      textAlign: 'center',
-      fontWeight: '800',
-      fontSize: '15px'
-    },
-    amountWords: {
-      padding: '8px 30px',
-      borderBottom: '1px solid #374151',
-      textAlign: 'center',
-      fontWeight: '500',
+      paddingLeft: '25px',
       fontSize: '13px'
     },
+    totalsRow: {
+      borderTop: '2px solid #000000',
+      borderBottom: '1px solid #000000'
+    },
+    totalsLabel: {
+      padding: '12px 10px',
+      textAlign: 'center',
+      fontWeight: '800',
+      fontSize: '16px'
+    },
+    amountWords: {
+      padding: '10px 25px',
+      borderBottom: '1px solid #000000',
+      textAlign: 'center',
+      fontWeight: '600',
+      fontSize: '14px'
+    },
     footerSection: {
-      padding: '15px 30px',
-      fontSize: '11px',
+      padding: '20px 25px',
+      fontSize: '12px',
       lineHeight: '1.6'
     },
     bankRow: {
       display: 'grid',
-      gridTemplateColumns: '140px auto',
+      gridTemplateColumns: '150px auto',
       gap: '8px',
       marginTop: '6px'
     },
     signatureBox: {
       textAlign: 'center',
-      marginTop: '-20px', // Pull it up a bit to align with bank details horizontally
+      marginTop: '-30px', 
       float: 'right',
       width: '300px'
     }
@@ -231,7 +231,7 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
           <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '4px' }}>
             To - <span style={{ fontWeight: '600' }}>{data.customerName || 'Client Name'}</span>
           </div>
-          <div style={{ paddingLeft: '32px', color: '#374151', lineHeight: '1.5' }}>
+          <div style={{ paddingLeft: '32px', color: '#000000', lineHeight: '1.5' }}>
             {data.billedToAddress && <div>{data.billedToAddress}</div>}
             {data.billedToGstin && <div style={{ fontWeight: '700', marginTop: '4px', color: '#000' }}>GSTIN : {data.billedToGstin}</div>}
           </div>
@@ -321,7 +321,7 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
             )}
 
             <tr style={styles.totalsRow}>
-              <td colSpan="3" style={{ ...styles.td, ...styles.totalsLabel, borderRight: '1px solid #374151' }}>
+              <td colSpan="3" style={{ ...styles.td, ...styles.totalsLabel, borderRight: '1px solid #000000' }}>
                 Total
               </td>
               <td style={{ ...styles.tdLast, fontWeight: '800', fontSize: '16px' }}>
@@ -350,7 +350,7 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
             For NEFT / RTGS - Bank A/C details.........
           </div>
           
-          <div style={{ display: 'flex', gap: '8px', fontSize: '10px', color: '#374151', marginBottom: '15px' }}>
+          <div style={{ display: 'flex', gap: '8px', fontSize: '10px', color: '#000000', marginBottom: '15px' }}>
             <div>Bank Name & Address :-</div>
             <div>{profile.bankName}</div>
           </div>
