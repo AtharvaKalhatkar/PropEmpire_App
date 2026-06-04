@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Printer } from 'lucide-react';
+import { ArrowLeft, Save, Printer, FileText } from 'lucide-react';
 import InvoicePreview from '../components/InvoicePreview';
 import { saveInvoice, getProfile, getInvoices } from '../db';
 import { generatePdfBlobFromElement, downloadPdfBlob } from '../utils/pdf';
@@ -64,6 +64,14 @@ export default function CreateInvoice({ onNavigate }) {
     const blob = await generatePdfBlobFromElement('printable-invoice');
     if (blob) {
       downloadPdfBlob(blob, getFileName());
+    }
+  };
+
+  const handleOpenPdf = async () => {
+    const blob = await generatePdfBlobFromElement('printable-invoice');
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
     }
   };
 
@@ -136,6 +144,9 @@ export default function CreateInvoice({ onNavigate }) {
           </button>
           <button className="btn btn-primary" onClick={handleSavePdf}>
             <Printer size={16} /> Save as PDF
+          </button>
+          <button className="btn btn-primary" onClick={handleOpenPdf} style={{ backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
+            <FileText size={16} /> Open PDF
           </button>
           <button onClick={handleShareWhatsApp} className="btn btn-secondary" style={{ backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}>
             WhatsApp

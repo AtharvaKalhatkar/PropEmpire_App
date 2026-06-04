@@ -47,7 +47,26 @@ export default function Deals() {
     setIsGeneratingPdf(true);
     try {
       const blob = await generatePdfBlobFromElement('printable-invoice-modal');
-      if (blob) downloadPdfBlob(blob, getFileName(invoice));
+      if (blob) {
+        const fileName = `Invoice_${invoice.customerName.replace(/\s+/g, '_') || 'PropEmpire'}.pdf`;
+        downloadPdfBlob(blob, fileName);
+      }
+    } catch (e) {
+      console.error("Error generating PDF:", e);
+      alert("Failed to generate PDF.");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleOpenPdf = async (invoice) => {
+    setIsGeneratingPdf(true);
+    try {
+      const blob = await generatePdfBlobFromElement('printable-invoice-modal');
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      }
     } catch (e) {
       console.error("Error generating PDF:", e);
       alert("Failed to generate PDF.");
@@ -184,11 +203,14 @@ export default function Deals() {
                 <X size={24} />
               </button>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" onClick={() => handleDownloadPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1 }}>
-                <Printer size={16} /> Save PDF
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary" onClick={() => handleDownloadPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1, minWidth: '120px' }}>
+                <Download size={16} /> Save PDF
               </button>
-              <button className="btn btn-secondary" onClick={() => handleShareWhatsApp(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1, backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}>
+              <button className="btn btn-primary" onClick={() => handleOpenPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1, minWidth: '120px', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
+                <FileText size={16} /> Open PDF
+              </button>
+              <button className="btn btn-secondary" onClick={() => handleShareWhatsApp(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1, minWidth: '120px', backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}>
                 <MessageCircle size={16} /> WhatsApp
               </button>
               <button className="btn btn-secondary" onClick={() => handleShareEmail(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1 }}>
