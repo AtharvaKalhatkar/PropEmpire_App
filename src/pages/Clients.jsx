@@ -11,7 +11,7 @@ export default function Clients() {
   const initialForm = { 
     name: '', phone: '', email: '', project: '', 
     status: 'Lead', budget: '', propertyType: '', 
-    leadSource: '', followupDate: '', notes: '' 
+    leadSource: '', nextFollowUp: '', notes: '' 
   };
   const [newClient, setNewClient] = useState(initialForm);
 
@@ -27,10 +27,15 @@ export default function Clients() {
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!newClient.name) return;
-    await addClient(newClient);
-    setNewClient(initialForm);
-    setIsAdding(false);
-    loadClients();
+    try {
+      await addClient(newClient);
+      setNewClient(initialForm);
+      setIsAdding(false);
+      loadClients();
+    } catch (err) {
+      console.error("Failed to save:", err);
+      alert("Failed to save client. Check console for details.");
+    }
   };
 
   const handleDelete = async (id) => {
@@ -155,7 +160,7 @@ export default function Clients() {
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Next Follow-up Date</label>
-              <input type="date" className="form-input" value={newClient.followupDate} onChange={e => setNewClient({...newClient, followupDate: e.target.value})} />
+              <input type="date" className="form-input" value={newClient.nextFollowUp} onChange={e => setNewClient({...newClient, nextFollowUp: e.target.value})} />
             </div>
             <div className="form-group" style={{ marginBottom: 0, gridColumn: '1 / -1' }}>
               <label className="form-label">Notes / Conversation History</label>
@@ -201,7 +206,7 @@ export default function Clients() {
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)', flexWrap: 'wrap' }} onClick={() => toggleExpand(client.id)}>
                       {client.project && <span>🏢 {client.project}</span>}
-                      {client.followupDate && <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#f59e0b' }}><Calendar size={14} /> Follow-up: {new Date(client.followupDate).toLocaleDateString()}</span>}
+                      {client.nextFollowUp && <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#f59e0b' }}><Calendar size={14} /> Follow-up: {new Date(client.nextFollowUp).toLocaleDateString()}</span>}
                     </div>
                   </div>
                   
