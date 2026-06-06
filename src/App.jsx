@@ -11,6 +11,7 @@ import logoImg from './assets/COMPANY_LOGO.png';
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [editingInvoice, setEditingInvoice] = useState(null);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -47,6 +48,15 @@ function App() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     window.history.pushState(null, '', `#${tab}`);
+    // Clear editing state if navigating away from invoice manually
+    if (tab !== 'invoice') {
+      setEditingInvoice(null);
+    }
+  };
+
+  const handleEditInvoice = (invoice) => {
+    setEditingInvoice(invoice);
+    handleTabChange('invoice');
   };
 
   const toggleTheme = () => {
@@ -73,8 +83,8 @@ function App() {
         {/* Main Content Area */}
         <main className="main-content animate-fade-in">
           {activeTab === 'dashboard' && <Dashboard onNavigate={handleTabChange} />}
-          {activeTab === 'deals' && <Deals />}
-          {activeTab === 'invoice' && <CreateInvoice onNavigate={handleTabChange} />}
+          {activeTab === 'deals' && <Deals onEditInvoice={handleEditInvoice} />}
+          {activeTab === 'invoice' && <CreateInvoice onNavigate={handleTabChange} editingInvoice={editingInvoice} setEditingInvoice={setEditingInvoice} />}
           {activeTab === 'clients' && <Clients />}
           {activeTab === 'visited' && <VisitedClients />}
           {activeTab === 'settings' && <Settings />}

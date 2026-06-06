@@ -4,8 +4,9 @@ import { getInvoices, getProfile, deleteInvoice } from '../db';
 import InvoicePreview from '../components/InvoicePreview';
 import { generatePdfBlobFromElement, downloadPdfBlob } from '../utils/pdf';
 import * as XLSX from 'xlsx';
+import { Edit2 } from 'lucide-react';
 
-export default function Deals() {
+export default function Deals({ onEditInvoice }) {
   const [invoices, setInvoices] = useState([]);
   const [profile, setProfile] = useState(null);
   
@@ -247,6 +248,13 @@ export default function Deals() {
                           style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
                         >
                           <Eye size={14} /> View
+                        </button>
+                        <button 
+                          onClick={() => onEditInvoice && onEditInvoice(inv)} 
+                          className="btn btn-secondary" 
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--primary-blue)', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}
+                        >
+                          <Edit2 size={14} /> Edit
                         </button>
                         <button 
                           onClick={() => handleDeleteInvoice(inv)} 

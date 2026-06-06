@@ -3,10 +3,12 @@ import { ArrowLeft, Save, Printer, FileText } from 'lucide-react';
 import InvoicePreview from '../components/InvoicePreview';
 import { saveInvoice, getProfile, getInvoices } from '../db';
 import { generatePdfBlobFromElement, downloadPdfBlob } from '../utils/pdf';
+import { Download, Share2, MessageCircle, Mail, X } from 'lucide-react';
 
-export default function CreateInvoice({ onNavigate }) {
-  const [mode, setMode] = useState('edit');
+export default function CreateInvoice({ onNavigate, editingInvoice, setEditingInvoice }) {
   const [profile, setProfile] = useState(null);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [formData, setFormData] = useState({
     invoiceNo: '1',
     date: new Date().toISOString().split('T')[0],
@@ -43,12 +45,18 @@ export default function CreateInvoice({ onNavigate }) {
       });
     });
     getInvoices().then(invoices => {
-      // Auto-increment invoice number based on existing
-      if (invoices.length > 0) {
+      // Auto-increment invoice number based on existing ONLY if not editing
+      if (invoices.length > 0 && !editingInvoice) {
         setFormData(prev => ({ ...prev, invoiceNo: (invoices.length + 1).toString() }));
       }
     }).catch(() => {});
-  }, []);
+  }, [editingInvoice]);
+
+  useEffect(() => {
+    if (editingInvoice) {
+      setFormData(editingInvoice);
+    }
+  }, [editingInvoice]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,8 +88,19 @@ export default function CreateInvoice({ onNavigate }) {
     }
   };
 
-  const handlePreview = () => {
-    setMode('preview');
+  const handleGenerateClick = () => {
+    if (!formData.customerName) {
+      alert("Please enter at least a Customer Name before generating.");
+      return;
+    }
+    setShowActionModal(true);
+  };
+
+  const handleSaveToDeals = async () => {
+    if (await ensureSaved()) {
+      alert("Invoice saved to Deals successfully!");
+      if (setEditingInvoice) setEditingInvoice(null);
+    }
   };
 
   const getFileName = () => {
@@ -162,64 +181,27 @@ export default function CreateInvoice({ onNavigate }) {
     } catch (error) {
       handleSavePdf();
       window.location.href = emailUrl;
+    } finally {
+      setIsGeneratingPdf(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowActionModal(false);
+    if (setEditingInvoice) setEditingInvoice(null);
   };
 
   if (!profile) return <div>Loading...</div>;
 
-  if (mode === 'preview') {
-    return (
-      <div className="animate-fade-in" style={{ paddingBottom: '4rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <button className="btn btn-secondary" onClick={() => setMode('edit')}>
-            <ArrowLeft size={16} /> Edit
-          </button>
-          <button className="btn btn-secondary" onClick={async () => {
-            if (await ensureSaved()) alert("Invoice saved to Deals successfully!");
-          }}>
-            <Save size={16} /> Save to Deals
-          </button>
-          <button className="btn btn-primary" onClick={handleSavePdf}>
-            <Printer size={16} /> Save as PDF
-          </button>
-          <button className="btn btn-primary" onClick={handleOpenPdf} style={{ backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
-            <FileText size={16} /> Open PDF
-          </button>
-          <button onClick={handleShareWhatsApp} className="btn btn-secondary" style={{ backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}>
-            WhatsApp
-          </button>
-          <button onClick={handleShareEmail} className="btn btn-secondary">
-            Email
-          </button>
-        </div>
-        
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem', textAlign: 'center' }}>
-          * Tip: Click "Save as PDF", then send it as an attachment via WhatsApp/Email.
-        </p>
-        
-        <div style={{ overflowX: 'auto', background: 'var(--surface-color)', padding: '1rem', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-md)', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ minWidth: '794px', display: 'flex', justifyContent: 'center' }}>
-            <div id="printable-invoice" style={{ width: '794px', minWidth: '794px', boxSizing: 'border-box', backgroundColor: '#ffffff', flexShrink: 0 }}>
-              <InvoicePreview 
-                data={formData} 
-                profile={profile}
-                brokerageAmount={calculateBrokerage()} 
-                totalAmount={calculateTotal()} 
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" style={{ paddingBottom: '6rem', position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0 }}>Create Invoice</h1>
-        <button className="btn btn-primary" onClick={handlePreview}>
-          Preview <ArrowRightIcon />
-        </button>
+        <h1 style={{ margin: 0 }}>{editingInvoice ? 'Edit Invoice' : 'Create Invoice'}</h1>
+        {editingInvoice && (
+          <button className="btn btn-secondary" onClick={() => setEditingInvoice(null)}>
+            Cancel Edit
+          </button>
+        )}
       </div>
 
       <div className="card" style={{ marginBottom: '2rem' }}>
@@ -318,15 +300,56 @@ export default function CreateInvoice({ onNavigate }) {
         </div>
       </div>
       
-      <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', paddingBottom: '5rem' }}>
-        <button className="btn btn-primary" style={{ width: '100%', maxWidth: '300px' }} onClick={handlePreview}>
-          Preview Invoice
+      {/* Fixed Bottom Action Bar */}
+      <div style={{ position: 'fixed', bottom: '60px', left: 0, right: 0, padding: '1rem', background: 'var(--surface-color)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', zIndex: 10, boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)' }}>
+        <button className="btn btn-primary" style={{ width: '100%', maxWidth: '400px', fontSize: '1.125rem', padding: '0.875rem' }} onClick={handleGenerateClick}>
+          {editingInvoice ? 'Update & Generate Invoice' : 'Generate Invoice'}
         </button>
       </div>
+
+      {/* Hidden container for PDF rendering */}
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', visibility: 'hidden' }}>
+        <div id="printable-invoice" style={{ width: '794px', minWidth: '794px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
+          <InvoicePreview 
+            data={formData} 
+            profile={profile}
+            brokerageAmount={calculateBrokerage()} 
+            totalAmount={calculateTotal()} 
+          />
+        </div>
+      </div>
+
+      {/* Action Modal */}
+      {showActionModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div className="animate-slide-up card" style={{ width: '100%', maxWidth: '500px', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, padding: '1.5rem', paddingBottom: '3rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0 }}>Invoice Ready!</h2>
+              <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={24} /></button>
+            </div>
+            
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>Your invoice has been successfully configured. Choose an action below:</p>
+
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              <button className="btn btn-secondary" onClick={handleSaveToDeals} style={{ justifyContent: 'flex-start', padding: '1rem', fontSize: '1rem' }}>
+                <Save size={20} style={{ marginRight: '0.75rem', color: 'var(--primary-blue)' }} /> Save to Deals List
+              </button>
+              
+              <button className="btn btn-secondary" onClick={handleOpenPdf} disabled={isGeneratingPdf} style={{ justifyContent: 'flex-start', padding: '1rem', fontSize: '1rem' }}>
+                <FileText size={20} style={{ marginRight: '0.75rem', color: '#f59e0b' }} /> {isGeneratingPdf ? 'Generating PDF...' : 'Open in PDF'}
+              </button>
+              
+              <button className="btn btn-secondary" onClick={handleShareWhatsApp} disabled={isGeneratingPdf} style={{ justifyContent: 'flex-start', padding: '1rem', fontSize: '1rem' }}>
+                <MessageCircle size={20} style={{ marginRight: '0.75rem', color: '#25D366' }} /> {isGeneratingPdf ? 'Generating PDF...' : 'Send on WhatsApp'}
+              </button>
+              
+              <button className="btn btn-secondary" onClick={handleShareEmail} disabled={isGeneratingPdf} style={{ justifyContent: 'flex-start', padding: '1rem', fontSize: '1rem' }}>
+                <Mail size={20} style={{ marginRight: '0.75rem', color: '#6366f1' }} /> {isGeneratingPdf ? 'Generating PDF...' : 'Send via Email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-const ArrowRightIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-);

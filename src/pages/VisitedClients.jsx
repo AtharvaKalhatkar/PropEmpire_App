@@ -220,19 +220,23 @@ export default function VisitedClients() {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '4rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><MapPin size={24} /> Visited Clients</h1>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className="btn btn-secondary" onClick={handleExportCSV} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={16} /> Export CSV
-          </button>
-          <button className="btn btn-secondary" onClick={handleExportExcel} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={16} /> Export Excel
-          </button>
-          <button className="btn btn-primary" onClick={() => setIsAdding(!isAdding)}>
-            <UserPlus size={16} /> Add Visit
-          </button>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
+          <MapPin size={28} color="var(--primary-blue)" /> 
+          Visited Clients
+        </h1>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+        <button className="btn btn-secondary" onClick={handleExportCSV} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--surface-color)', border: '1px solid var(--border-color)' }}>
+          <FileText size={18} color="var(--primary-blue)" /> Export CSV
+        </button>
+        <button className="btn btn-secondary" onClick={handleExportExcel} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--surface-color)', border: '1px solid var(--border-color)' }}>
+          <FileText size={18} color="#10b981" /> Export Excel
+        </button>
+        <button className="btn btn-primary" onClick={() => setIsAdding(!isAdding)} style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.875rem', fontSize: '1rem' }}>
+          <UserPlus size={20} /> Log New Visit
+        </button>
       </div>
 
       {/* Filters Area */}
@@ -346,71 +350,73 @@ export default function VisitedClients() {
         </form>
       )}
 
-      <div className="card" style={{ padding: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {filteredClients.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <MapPin size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.5 }} />
+          <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <MapPin size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.5, color: 'var(--primary-blue)' }} />
             <p>{clients.length === 0 ? 'No visited clients yet. Start by logging a visit!' : 'No clients match your filters.'}</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {filteredClients.map(client => (
-              <div key={client.id} style={{ display: 'flex', flexDirection: 'column', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-                {/* Header Row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                      <Calendar size={14} color="var(--text-muted)" />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>
-                        {new Date(client.visit_date).toLocaleDateString('en-GB')}
-                      </span>
-                    </div>
-                    <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem' }} onClick={() => toggleExpand(client.id)}>
-                      {client.name} 
-                    </h3>
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                      {client.phone && (
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <a href={`tel:${client.phone}`} className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', gap: '0.25rem' }}>
-                            <Phone size={14} /> Call
-                          </a>
-                          <a href={`https://wa.me/${formatWaNumber(client.phone)}`} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', gap: '0.25rem', color: '#16a34a', borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}>
-                            <MessageCircle size={14} /> WhatsApp
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)', flexWrap: 'wrap' }} onClick={() => toggleExpand(client.id)}>
-                      {client.project && <span>🏢 {client.project}</span>}
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', gap: '0.25rem' }}>
-                      <button onClick={() => toggleExpand(client.id)} style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', cursor: 'pointer', padding: '0.25rem' }}>
-                        {expandedId === client.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                      </button>
-                      <button onClick={() => setClientToDelete(client)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.25rem' }}>
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
+          filteredClients.map(client => (
+            <div key={client.id} className="card" style={{ display: 'flex', flexDirection: 'column', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
+              
+              {/* Top Row: Date & Actions */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-color)', padding: '0.25rem 0.75rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
+                  <Calendar size={14} color="var(--primary-blue)" />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: '600' }}>
+                    {new Date(client.visit_date).toLocaleDateString('en-GB')}
+                  </span>
                 </div>
+                
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button onClick={() => toggleExpand(client.id)} style={{ background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '50%', color: 'var(--text-main)', cursor: 'pointer', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {expandedId === client.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                  <button onClick={() => setClientToDelete(client)} style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '50%', color: '#ef4444', cursor: 'pointer', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
 
-                {/* Expanded Details Row */}
-                {expandedId === client.id && (
-                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed var(--border-color)', fontSize: '0.875rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                    <div><strong style={{color:'var(--text-muted)', display: 'block', marginBottom: '4px'}}>Property Showed:</strong> {renderProperties(client.properties)}</div>
-                    <div><strong style={{color:'var(--text-muted)', display: 'block', marginBottom: '4px'}}>Budget:</strong> {client.budget || 'N/A'}</div>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <strong style={{color:'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem'}}><FileText size={14}/> Notes:</strong> 
-                      <p style={{ margin: 0, whiteSpace: 'pre-line' }}>{client.notes || 'No notes added.'}</p>
-                    </div>
-                  </div>
+              {/* Client Info */}
+              <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-main)' }} onClick={() => toggleExpand(client.id)}>
+                {client.name} 
+              </h3>
+              
+              {client.project && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }} onClick={() => toggleExpand(client.id)}>
+                  <MapPin size={14} /> <span>{client.project}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                {client.phone && (
+                  <>
+                    <a href={`tel:${client.phone}`} className="btn btn-secondary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.875rem', gap: '0.5rem', justifyContent: 'center' }}>
+                      <Phone size={16} color="var(--primary-blue)" /> Call
+                    </a>
+                    <a href={`https://wa.me/${formatWaNumber(client.phone)}`} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.875rem', gap: '0.5rem', color: '#16a34a', borderColor: '#bbf7d0', backgroundColor: '#f0fdf4', justifyContent: 'center' }}>
+                      <MessageCircle size={16} /> WhatsApp
+                    </a>
+                  </>
                 )}
               </div>
-            ))}
-          </div>
+
+              {/* Expanded Details */}
+              {expandedId === client.id && (
+                <div className="animate-fade-in" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed var(--border-color)', fontSize: '0.875rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                  <div><strong style={{color:'var(--text-muted)', display: 'block', marginBottom: '6px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Properties:</strong> {renderProperties(client.properties)}</div>
+                  <div><strong style={{color:'var(--text-muted)', display: 'block', marginBottom: '6px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Budget:</strong> <span style={{ fontWeight: '600' }}>{client.budget || 'N/A'}</span></div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <strong style={{color:'var(--text-muted)', display: 'block', marginBottom: '6px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Notes:</strong> 
+                    <p style={{ margin: 0, whiteSpace: 'pre-line', color: 'var(--text-main)', lineHeight: '1.5' }}>{client.notes || 'No notes added.'}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
         )}
       </div>
 

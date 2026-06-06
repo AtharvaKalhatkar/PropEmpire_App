@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, TrendingUp, Users, ArrowRight } from 'lucide-react';
+import { PlusCircle, TrendingUp, Users, MapPin, DollarSign } from 'lucide-react';
 import { getInvoices, getClients } from '../db';
 
 export default function Dashboard({ onNavigate }) {
@@ -34,42 +34,50 @@ export default function Dashboard({ onNavigate }) {
 
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-muted)' }}>
-            <TrendingUp size={20} />
-            <h3 style={{ fontSize: '1rem', color: 'inherit' }}>Total Earnings</h3>
+        <div className="card" style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', opacity: 0.9 }}>
+            <DollarSign size={20} />
+            <h3 style={{ fontSize: '1rem', color: 'inherit', margin: 0 }}>Total Earnings</h3>
           </div>
-          <p style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary-blue)', margin: 0 }}>₹ {stats.earnings.toLocaleString('en-IN')}</p>
+          <p style={{ fontSize: '2.5rem', fontWeight: '800', margin: 0, wordBreak: 'break-word' }}>₹ {stats.earnings.toLocaleString('en-IN')}</p>
         </div>
 
-        <div className="card">
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-muted)' }}>
             <Users size={20} />
-            <h3 style={{ fontSize: '1rem', color: 'inherit' }}>Active Leads</h3>
+            <h3 style={{ fontSize: '1rem', color: 'inherit', margin: 0 }}>Active Leads</h3>
           </div>
-          <p style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary-blue)', margin: 0 }}>{stats.activeLeads}</p>
+          <p style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>{stats.activeLeads}</p>
         </div>
       </div>
 
       {/* Quick Actions */}
       <div>
         <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Quick Actions</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.75rem' }}>
           <button 
             className="btn btn-primary" 
-            style={{ width: '100%', justifyContent: 'flex-start' }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.5rem 0.5rem' }}
             onClick={() => onNavigate('invoice')}
           >
-            <PlusCircle size={20} />
-            New Invoice
+            <PlusCircle size={24} />
+            <span style={{ fontSize: '0.875rem' }}>New Invoice</span>
           </button>
           <button 
             className="btn btn-secondary" 
-            style={{ width: '100%', justifyContent: 'flex-start' }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.5rem 0.5rem' }}
+            onClick={() => onNavigate('visited')}
+          >
+            <MapPin size={24} />
+            <span style={{ fontSize: '0.875rem' }}>Visits</span>
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.5rem 0.5rem' }}
             onClick={() => onNavigate('clients')}
           >
-            <Users size={20} />
-            Manage Clients
+            <Users size={24} />
+            <span style={{ fontSize: '0.875rem' }}>Clients</span>
           </button>
         </div>
       </div>
