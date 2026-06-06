@@ -163,7 +163,7 @@ export default function InvoicePreview({ data, profile, brokerageAmount, totalAm
                   {data.brokeragePercent} %
                 </td>
                 <td style={{ padding: 0, verticalAlign: 'top' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '280px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <div style={{ flex: 1, textAlign: 'right', fontWeight: 'bold', fontSize: '14px', padding: '15px 10px' }}>
                       {brokerageAmount.toLocaleString('en-IN')} /-
                     </div>
