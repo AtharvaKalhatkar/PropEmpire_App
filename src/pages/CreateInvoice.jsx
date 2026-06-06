@@ -194,7 +194,7 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
   if (!profile) return <div>Loading...</div>;
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '6rem', position: 'relative' }}>
+    <div className="animate-fade-in" style={{ paddingBottom: '2rem', position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ margin: 0 }}>{editingInvoice ? 'Edit Invoice' : 'Create Invoice'}</h1>
         {editingInvoice && (
@@ -300,9 +300,9 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
         </div>
       </div>
       
-      {/* Fixed Bottom Action Bar */}
-      <div style={{ position: 'fixed', bottom: '60px', left: 0, right: 0, padding: '1rem', background: 'var(--surface-color)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', zIndex: 10, boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.05)' }}>
-        <button className="btn btn-primary" style={{ width: '100%', maxWidth: '400px', fontSize: '1.125rem', padding: '0.875rem' }} onClick={handleGenerateClick}>
+      {/* Action Button */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+        <button className="btn btn-primary" style={{ width: '100%', fontSize: '1.125rem', padding: '0.875rem' }} onClick={handleGenerateClick}>
           {editingInvoice ? 'Update & Generate Invoice' : 'Generate Invoice'}
         </button>
       </div>

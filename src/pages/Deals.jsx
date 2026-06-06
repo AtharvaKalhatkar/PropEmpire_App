@@ -165,19 +165,6 @@ export default function Deals({ onEditInvoice }) {
     }
   };
 
-  const handleClearAllInvoices = async () => {
-    if (window.confirm("WARNING: Are you sure you want to delete ALL invoices? This action cannot be undone.")) {
-      try {
-        for (const inv of invoices) {
-          await deleteInvoice(inv.id);
-        }
-        loadInvoices();
-      } catch (e) {
-        alert("Failed to delete all invoices.");
-      }
-    }
-  };
-
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '4rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -195,11 +182,6 @@ export default function Deals({ onEditInvoice }) {
           <button className="btn btn-secondary" onClick={handleExportExcel} style={{ padding: '0.5rem 1rem' }}>
             <FileText size={18} /> Export
           </button>
-          {invoices.length > 0 && (
-            <button className="btn btn-secondary" onClick={handleClearAllInvoices} style={{ padding: '0.5rem 1rem', color: '#ef4444', borderColor: '#ef4444' }}>
-              <X size={18} /> Clear All
-            </button>
-          )}
         </div>
       </div>
 

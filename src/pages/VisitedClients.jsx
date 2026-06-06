@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, UserPlus, Phone, Trash2, Calendar, FileText, ChevronDown, ChevronUp, Search, MessageCircle, CheckSquare, Square, Filter } from 'lucide-react';
+import { MapPin, UserPlus, Phone, Trash2, Calendar, FileText, ChevronDown, ChevronUp, Search, MessageCircle, CheckSquare, Square, Filter, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { getVisitedClients, saveVisitedClient, deleteVisitedClient } from '../db';
 
@@ -239,49 +239,47 @@ export default function VisitedClients() {
         </button>
       </div>
 
-      {/* Filters Area */}
-      <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
-          <div style={{ flex: '1 1 200px', position: 'relative' }}>
-            <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="Search name or mobile..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ paddingLeft: '34px', marginBottom: 0 }}
-            />
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <Filter size={16} color="var(--text-muted)" />
-            <input 
-              type="date" 
-              className="form-input" 
-              style={{ width: 'auto', marginBottom: 0 }}
-              value={dateFilterFrom}
-              onChange={(e) => setDateFilterFrom(e.target.value)}
-              title="From Date"
-            />
-            <span style={{ color: 'var(--text-muted)' }}>to</span>
-            <input 
-              type="date" 
-              className="form-input" 
-              style={{ width: 'auto', marginBottom: 0 }}
-              value={dateFilterTo}
-              onChange={(e) => setDateFilterTo(e.target.value)}
-              title="To Date"
-            />
-            {(dateFilterFrom || dateFilterTo) && (
-              <button 
-                onClick={() => { setDateFilterFrom(''); setDateFilterTo(''); }} 
-                style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', cursor: 'pointer', fontSize: '0.875rem' }}
-              >
-                Clear
-              </button>
-            )}
-          </div>
+      {/* Minimal Filters Area */}
+      <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ flex: '1 1 150px', position: 'relative' }}>
+          <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input 
+            type="text" 
+            className="form-input" 
+            placeholder="Search name or mobile..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ paddingLeft: '32px', marginBottom: 0, padding: '0.5rem 0.5rem 0.5rem 32px', fontSize: '0.875rem' }}
+          />
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', backgroundColor: 'var(--surface-color)', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+          <Filter size={14} color="var(--text-muted)" />
+          <input 
+            type="date" 
+            className="form-input" 
+            style={{ width: 'auto', marginBottom: 0, border: 'none', background: 'transparent', padding: '0.25rem', fontSize: '0.75rem' }}
+            value={dateFilterFrom}
+            onChange={(e) => setDateFilterFrom(e.target.value)}
+            title="From Date"
+          />
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>to</span>
+          <input 
+            type="date" 
+            className="form-input" 
+            style={{ width: 'auto', marginBottom: 0, border: 'none', background: 'transparent', padding: '0.25rem', fontSize: '0.75rem' }}
+            value={dateFilterTo}
+            onChange={(e) => setDateFilterTo(e.target.value)}
+            title="To Date"
+          />
+          {(dateFilterFrom || dateFilterTo) && (
+            <button 
+              onClick={() => { setDateFilterFrom(''); setDateFilterTo(''); }} 
+              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: '0.25rem' }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 
