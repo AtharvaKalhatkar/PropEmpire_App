@@ -13,14 +13,14 @@ export const generatePdfBlobFromElement = async (elementId) => {
   const canvas = await html2canvas(element, { scale: 2 });
   const imgData = canvas.toDataURL('image/jpeg', 0.85);
   
+  const pdfWidth = 210; // Keep A4 standard width (210mm)
+  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
-    format: 'a4'
+    format: [pdfWidth, pdfHeight]
   });
-  
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
   
   pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
   return pdf.output('blob');
