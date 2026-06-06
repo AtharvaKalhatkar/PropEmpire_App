@@ -282,5 +282,92 @@ export async function deleteInvoice(id) {
   return true;
 }
 
+// ---------------- VISITED CLIENTS ---------------- //
+
+export async function getVisitedClients() {
+  const cached = await localforage.getItem('visited_clients_cache');
+
+  if (supabase) {
+    supabase.from('visited_clients').select('*').order('visit_date', { ascending: false }).then(({ data, error }) => {
+      if (!error && data) {
+        localforage.setItem('visited_clients_cache', data);
+      }
+    });
+  }
+
+  if (cached) return cached;
+
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('visited_clients')
+      .select('*')
+      .order('visit_date', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching visited clients:", error);
+      return [];
+    }
+
+    if (data) await localforage.setItem('visited_clients_cache', data);
+    return data || [];
+  }
+
+  return [];
+}
+
+export async function saveVisitedClient(clientData) {
+  if (supabase) {
+    let response;
+    // ensure properties is stored as string/json if it's an array
+    if (clientData.id) {
+      response = await supabase.from('visited_clients').update(clientData).eq('id', clientData.id).select().single();
+    } else {
+      response = await supabase.from('visited_clients').insert([clientData]).select().single();
+    }
+
+    if (response.error) {
+      console.error("Error saving visited client:", response.error);
+      throw response.error;
+    }
+
+    await localforage.removeItem('visited_clients_cache');
+    return response.data;
+  }
+
+  // Offline mode
+  const clients = (await localforage.getItem('visited_clients_cache')) || [];
+  if (clientData.id) {
+    const idx = clients.findIndex(c => c.id === clientData.id);
+    if (idx !== -1) clients[idx] = { ...clientData };
+  } else {
+    clientData.id = crypto.randomUUID();
+    clientData.created_at = new Date().toISOString();
+    clients.unshift(clientData);
+  }
+  await localforage.setItem('visited_clients_cache', clients);
+  return clientData;
+}
+
+export async function deleteVisitedClient(id) {
+  if (supabase) {
+    const { error } = await supabase
+      .from('visited_clients')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting visited client:", error);
+      throw error;
+    }
+    await localforage.removeItem('visited_clients_cache');
+    return true;
+  }
+
+  const clients = (await localforage.getItem('visited_clients_cache')) || [];
+  const filtered = clients.filter(c => c.id !== id);
+  await localforage.setItem('visited_clients_cache', filtered);
+  return true;
+}
+
 // Export supabase for any direct use
 export { supabase };
