@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { FileText, Download, Calendar, DollarSign, Eye, X, Printer, MessageCircle, Mail } from 'lucide-react';
 import { getInvoices, getProfile, deleteInvoice } from '../db';
-import InvoicePreview from '../components/InvoicePreview';
-import { generatePdfBlobFromElement, downloadPdfBlob } from '../utils/pdf';
+import InvoiceTemplate from '../components/InvoiceTemplate';
+import { generateInvoicePdfBlob } from '../utils/invoiceTemplate';
+import { downloadPdfBlob } from '../utils/pdf';
 import * as XLSX from 'xlsx';
 import { Edit2 } from 'lucide-react';
 
@@ -52,7 +53,13 @@ export default function Deals({ onEditInvoice }) {
   const handleDownloadPdf = async (invoice) => {
     setIsGeneratingPdf(true);
     try {
-      const blob = await generatePdfBlobFromElement('printable-invoice-modal');
+      const blob = await generateInvoicePdfBlob({
+        data: invoice,
+        profile,
+        brokerageAmount: calculateBrokerage(invoice),
+        totalAmount: calculateTotal(invoice),
+        executiveBonus: Number(invoice.executiveBonus),
+      });
       if (blob) {
         const fileName = `Invoice_${invoice.customerName.replace(/\s+/g, '_') || 'PropEmpire'}.pdf`;
         downloadPdfBlob(blob, fileName);
@@ -92,7 +99,13 @@ export default function Deals({ onEditInvoice }) {
   const handleOpenPdf = async (invoice) => {
     setIsGeneratingPdf(true);
     try {
-      const blob = await generatePdfBlobFromElement('printable-invoice-modal');
+      const blob = await generateInvoicePdfBlob({
+        data: invoice,
+        profile,
+        brokerageAmount: calculateBrokerage(invoice),
+        totalAmount: calculateTotal(invoice),
+        executiveBonus: Number(invoice.executiveBonus),
+      });
       if (blob) {
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
@@ -113,7 +126,13 @@ export default function Deals({ onEditInvoice }) {
 
     setIsGeneratingPdf(true);
     try {
-      const blob = await generatePdfBlobFromElement('printable-invoice-modal');
+      const blob = await generateInvoicePdfBlob({
+        data: invoice,
+        profile,
+        brokerageAmount: calculateBrokerage(invoice),
+        totalAmount: calculateTotal(invoice),
+        executiveBonus: Number(invoice.executiveBonus),
+      });
       const file = new File([blob], getFileName(invoice), { type: 'application/pdf' });
       
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -137,7 +156,13 @@ export default function Deals({ onEditInvoice }) {
 
     setIsGeneratingPdf(true);
     try {
-      const blob = await generatePdfBlobFromElement('printable-invoice-modal');
+      const blob = await generateInvoicePdfBlob({
+        data: invoice,
+        profile,
+        brokerageAmount: calculateBrokerage(invoice),
+        totalAmount: calculateTotal(invoice),
+        executiveBonus: Number(invoice.executiveBonus),
+      });
       const file = new File([blob], getFileName(invoice), { type: 'application/pdf' });
       
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -282,16 +307,14 @@ export default function Deals({ onEditInvoice }) {
           </div>
           
           <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', flex: 1, overflowY: 'auto' }}>
-            <div style={{ width: '100%', maxWidth: '850px', overflowX: 'auto', backgroundColor: 'var(--surface-color)', padding: '1rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)' }}>
-              <div style={{ minWidth: '794px', display: 'flex', justifyContent: 'center' }}>
-                <div id="printable-invoice-modal" style={{ width: '794px', minWidth: '794px', height: '1123px', boxSizing: 'border-box', backgroundColor: '#ffffff', flexShrink: 0 }}>
-                  <InvoicePreview 
-                    data={viewingInvoice} 
-                    profile={profile}
-                    brokerageAmount={calculateBrokerage(viewingInvoice)} 
-                    totalAmount={calculateTotal(viewingInvoice)} 
-                  />
-                </div>
+            <div style={{ width: '100%', maxWidth: '100%', overflowX: 'auto', backgroundColor: 'var(--surface-color)', padding: '1rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)' }}>
+              <div id="printable-invoice-modal" style={{ display: 'flex', justifyContent: 'center' }}>
+                <InvoiceTemplate 
+                  data={viewingInvoice} 
+                  profile={profile}
+                  brokerageAmount={calculateBrokerage(viewingInvoice)} 
+                  totalAmount={calculateTotal(viewingInvoice)}
+                />
               </div>
             </div>
           </div>

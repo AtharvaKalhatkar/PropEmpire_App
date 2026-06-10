@@ -10,7 +10,7 @@ export const generatePdfBlobFromElement = async (elementId) => {
   
   // Create a high-quality canvas from the DOM element
   // Use scale 2 for crisp text, but save as JPEG to reduce PDF file size drastically
-  const canvas = await html2canvas(element, { scale: 2 });
+  const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
   const imgData = canvas.toDataURL('image/jpeg', 0.85);
   
   const pdfWidth = 210; // Keep A4 standard width (210mm)

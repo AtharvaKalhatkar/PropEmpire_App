@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Printer, FileText } from 'lucide-react';
-import InvoicePreview from '../components/InvoicePreview';
+import InvoiceTemplate from '../components/InvoiceTemplate';
+import { generateInvoicePdfBlob } from '../utils/invoiceTemplate';
 import { saveInvoice, getProfile, getInvoices } from '../db';
-import { generatePdfBlobFromElement, downloadPdfBlob } from '../utils/pdf';
+import { downloadPdfBlob } from '../utils/pdf';
 import { Download, Share2, MessageCircle, Mail, X } from 'lucide-react';
 
 export default function CreateInvoice({ onNavigate, editingInvoice, setEditingInvoice }) {
@@ -111,7 +112,13 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
 
   const handleSavePdf = async () => {
     if (!(await ensureSaved())) return;
-    const blob = await generatePdfBlobFromElement('printable-invoice');
+    const blob = await generateInvoicePdfBlob({
+      data: formData,
+      profile,
+      brokerageAmount: calculateBrokerage(),
+      totalAmount: calculateTotal(),
+      executiveBonus: Number(formData.executiveBonus),
+    });
     if (blob) {
       downloadPdfBlob(blob, getFileName());
     }
@@ -119,7 +126,13 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
 
   const handleOpenPdf = async () => {
     if (!(await ensureSaved())) return;
-    const blob = await generatePdfBlobFromElement('printable-invoice');
+    const blob = await generateInvoicePdfBlob({
+      data: formData,
+      profile,
+      brokerageAmount: calculateBrokerage(),
+      totalAmount: calculateTotal(),
+      executiveBonus: Number(formData.executiveBonus),
+    });
     if (blob) {
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
@@ -135,7 +148,13 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
 
     try {
       if (!(await ensureSaved())) return;
-      const blob = await generatePdfBlobFromElement('printable-invoice');
+      const blob = await generateInvoicePdfBlob({
+        data: formData,
+        profile,
+        brokerageAmount: calculateBrokerage(),
+        totalAmount: calculateTotal(),
+        executiveBonus: Number(formData.executiveBonus),
+      });
       const file = new File([blob], getFileName(), { type: 'application/pdf' });
       
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -166,7 +185,13 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
 
     try {
       if (!(await ensureSaved())) return;
-      const blob = await generatePdfBlobFromElement('printable-invoice');
+      const blob = await generateInvoicePdfBlob({
+        data: formData,
+        profile,
+        brokerageAmount: calculateBrokerage(),
+        totalAmount: calculateTotal(),
+        executiveBonus: Number(formData.executiveBonus),
+      });
       const file = new File([blob], getFileName(), { type: 'application/pdf' });
       
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -310,13 +335,14 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
       </div>
 
       {/* Hidden container for PDF rendering */}
-      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', visibility: 'hidden' }}>
-        <div id="printable-invoice" style={{ width: '794px', minWidth: '794px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
-          <InvoicePreview 
+      <div style={{ position: 'absolute', top: '0', left: '-10000px', pointerEvents: 'none' }}>
+        <div id="printable-invoice" style={{ width: '904px', minWidth: '904px', height: '1280px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}>
+          <InvoiceTemplate 
             data={formData} 
             profile={profile}
             brokerageAmount={calculateBrokerage()} 
-            totalAmount={calculateTotal()} 
+            totalAmount={calculateTotal()}
+            executiveBonus={Number(formData.executiveBonus)}
           />
         </div>
       </div>
