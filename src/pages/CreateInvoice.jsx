@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Printer, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Printer, FileText, Home } from 'lucide-react';
 import InvoiceTemplate from '../components/InvoiceTemplate';
 import { generateInvoicePdfBlob } from '../utils/invoiceTemplate';
 import { saveInvoice, getProfile, getInvoices } from '../db';
@@ -10,9 +10,8 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
   const [profile, setProfile] = useState(null);
   const [showActionModal, setShowActionModal] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const currentYearPrefix = new Date().getFullYear().toString().slice(-2);
   const [formData, setFormData] = useState({
-    invoiceNo: `${currentYearPrefix}001`,
+    invoiceNo: '1',
     date: new Date().toISOString().split('T')[0],
     billedToName: '',
     billedToAddress: '',
@@ -49,8 +48,11 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
     getInvoices().then(invoices => {
       // Auto-increment invoice number based on existing ONLY if not editing
       if (!editingInvoice) {
-        const nextNumber = String(invoices.length + 1).padStart(3, '0');
-        setFormData(prev => ({ ...prev, invoiceNo: `${currentYearPrefix}${nextNumber}` }));
+        const maxNo = invoices.reduce((max, inv) => {
+          const num = parseInt(inv.invoiceNo, 10);
+          return (!isNaN(num) && num > max) ? num : max;
+        }, 0);
+        setFormData(prev => ({ ...prev, invoiceNo: String(maxNo + 1) }));
       }
     }).catch(() => {});
   }, [editingInvoice]);
@@ -91,18 +93,20 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
     }
   };
 
-  const handleGenerateClick = () => {
+  const handleGenerateClick = async () => {
     if (!formData.customerName) {
       alert("Please enter at least a Customer Name before generating.");
       return;
     }
-    setShowActionModal(true);
+    const saved = await ensureSaved();
+    if (saved) {
+      setShowActionModal(true);
+    }
   };
 
   const handleSaveToDeals = async () => {
     if (await ensureSaved()) {
       alert("Invoice saved to Deals successfully!");
-      if (setEditingInvoice) setEditingInvoice(null);
     }
   };
 
@@ -215,7 +219,6 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
 
   const handleCloseModal = () => {
     setShowActionModal(false);
-    if (setEditingInvoice) setEditingInvoice(null);
   };
 
   if (!profile) return <div>Loading...</div>;
@@ -347,32 +350,35 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
         </div>
       </div>
 
-      {/* Action Modal */}
+      {/* Invoice Created Success Modal */}
       {showActionModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div className="animate-slide-up card" style={{ width: '100%', maxWidth: '500px', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, padding: '1.5rem', paddingBottom: '3rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0 }}>Invoice Ready!</h2>
-              <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={24} /></button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="animate-fade-in card" style={{ width: '100%', maxWidth: '420px', padding: '2rem', textAlign: 'center' }}>
+            
+            {/* Success Icon */}
+            <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem auto', boxShadow: '0 8px 20px rgba(16,185,129,0.3)' }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </div>
             
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>Your invoice has been successfully configured. Choose an action below:</p>
-
-            <div style={{ display: 'grid', gap: '0.75rem' }}>
-              <button className="btn btn-secondary" onClick={handleSaveToDeals} style={{ justifyContent: 'flex-start', padding: '1rem', fontSize: '1rem' }}>
-                <Save size={20} style={{ marginRight: '0.75rem', color: 'var(--primary-blue)' }} /> Save to Deals List
+            <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>Invoice Created!</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1.75rem', fontSize: '0.9rem' }}>Invoice #{formData.invoiceNo} for {formData.customerName} has been saved successfully.</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button className="btn btn-primary" onClick={handleOpenPdf} disabled={isGeneratingPdf} style={{ width: '100%', padding: '0.875rem', fontSize: '1rem', justifyContent: 'center' }}>
+                <FileText size={20} style={{ marginRight: '0.75rem' }} /> {isGeneratingPdf ? 'Generating...' : 'Open as PDF'}
               </button>
               
-              <button className="btn btn-secondary" onClick={handleOpenPdf} disabled={isGeneratingPdf} style={{ justifyContent: 'flex-start', padding: '1rem', fontSize: '1rem' }}>
-                <FileText size={20} style={{ marginRight: '0.75rem', color: '#f59e0b' }} /> {isGeneratingPdf ? 'Generating PDF...' : 'Open in PDF'}
-              </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <button className="btn btn-secondary" onClick={handleShareWhatsApp} disabled={isGeneratingPdf} style={{ padding: '0.875rem', fontSize: '0.9rem', justifyContent: 'center', backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', color: '#16a34a' }}>
+                  <MessageCircle size={18} style={{ marginRight: '0.5rem' }} /> WhatsApp
+                </button>
+                <button className="btn btn-secondary" onClick={handleShareEmail} disabled={isGeneratingPdf} style={{ padding: '0.875rem', fontSize: '0.9rem', justifyContent: 'center', backgroundColor: '#eef2ff', borderColor: '#c7d2fe', color: '#6366f1' }}>
+                  <Mail size={18} style={{ marginRight: '0.5rem' }} /> Email
+                </button>
+              </div>
               
-              <button className="btn btn-secondary" onClick={handleShareWhatsApp} disabled={isGeneratingPdf} style={{ justifyContent: 'flex-start', padding: '1rem', fontSize: '1rem' }}>
-                <MessageCircle size={20} style={{ marginRight: '0.75rem', color: '#25D366' }} /> {isGeneratingPdf ? 'Generating PDF...' : 'Send on WhatsApp'}
-              </button>
-              
-              <button className="btn btn-secondary" onClick={handleShareEmail} disabled={isGeneratingPdf} style={{ justifyContent: 'flex-start', padding: '1rem', fontSize: '1rem' }}>
-                <Mail size={20} style={{ marginRight: '0.75rem', color: '#6366f1' }} /> {isGeneratingPdf ? 'Generating PDF...' : 'Send via Email'}
+              <button className="btn btn-secondary" onClick={() => { setShowActionModal(false); if (setEditingInvoice) setEditingInvoice(null); onNavigate('dashboard'); }} style={{ width: '100%', padding: '0.875rem', fontSize: '1rem', justifyContent: 'center', marginTop: '0.25rem' }}>
+                <Home size={20} style={{ marginRight: '0.75rem' }} /> Go to Home
               </button>
             </div>
           </div>
