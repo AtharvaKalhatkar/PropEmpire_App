@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, Download, Calendar, DollarSign, Eye, X, Printer, MessageCircle, Mail } from 'lucide-react';
 import { getInvoices, getProfile, deleteInvoice } from '../db';
-import InvoiceTemplate from '../components/InvoiceTemplate';
 import { generateInvoicePdfBlob } from '../utils/invoiceTemplate';
 import { downloadPdfBlob } from '../utils/pdf';
 import * as XLSX from 'xlsx';
@@ -280,42 +279,30 @@ export default function Deals({ onEditInvoice }) {
         )}
       </div>
 
-      {/* Full Screen View Modal */}
+      {/* Action Modal */}
       {viewingInvoice && profile && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'var(--bg-color)', zIndex: 100, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--surface-color)', padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem', zIndex: 101, boxShadow: 'var(--shadow-md)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Invoice #{viewingInvoice.invoiceNo}</h2>
               <button onClick={() => setViewingInvoice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-main)', padding: '0.5rem' }}>
                 <X size={24} />
               </button>
             </div>
-            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" onClick={() => handleDownloadPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1, minWidth: '120px' }}>
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Choose an action for this invoice.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button className="btn btn-primary" onClick={() => handleDownloadPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ width: '100%' }}>
                 <Download size={16} /> Save PDF
               </button>
-              <button className="btn btn-primary" onClick={() => handleOpenPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1, minWidth: '120px', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
+              <button className="btn btn-primary" onClick={() => handleOpenPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ width: '100%', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
                 <FileText size={16} /> Open PDF
               </button>
-              <button className="btn btn-secondary" onClick={() => handleShareWhatsApp(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1, minWidth: '120px', backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}>
+              <button className="btn btn-secondary" onClick={() => handleShareWhatsApp(viewingInvoice)} disabled={isGeneratingPdf} style={{ width: '100%', backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}>
                 <MessageCircle size={16} /> WhatsApp
               </button>
-              <button className="btn btn-secondary" onClick={() => handleShareEmail(viewingInvoice)} disabled={isGeneratingPdf} style={{ flex: 1 }}>
+              <button className="btn btn-secondary" onClick={() => handleShareEmail(viewingInvoice)} disabled={isGeneratingPdf} style={{ width: '100%' }}>
                 <Mail size={16} /> Email
               </button>
-            </div>
-          </div>
-          
-          <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', flex: 1, overflowY: 'auto' }}>
-            <div style={{ width: '100%', maxWidth: '100%', overflowX: 'auto', backgroundColor: 'var(--surface-color)', padding: '1rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)' }}>
-              <div id="printable-invoice-modal" style={{ display: 'flex', justifyContent: 'center' }}>
-                <InvoiceTemplate 
-                  data={viewingInvoice} 
-                  profile={profile}
-                  brokerageAmount={calculateBrokerage(viewingInvoice)} 
-                  totalAmount={calculateTotal(viewingInvoice)}
-                />
-              </div>
             </div>
           </div>
         </div>
