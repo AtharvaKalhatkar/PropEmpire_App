@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, Phone, Trash2, Calendar, FileText, ChevronDown, ChevronUp, Search, MessageCircle } from 'lucide-react';
+import { Users, UserPlus, Phone, Trash2, Calendar, FileText, ChevronDown, ChevronUp, Search, MessageCircle, Send, Radio, CheckSquare, Square, X } from 'lucide-react';
 import { getClients, addClient, deleteClient, updateClientStatus } from '../db';
 import { exportRowsToXlsx } from '../utils/spreadsheet';
 
@@ -16,6 +16,32 @@ export default function Clients() {
   };
   const [newClient, setNewClient] = useState(initialForm);
   const [clientToDelete, setClientToDelete] = useState(null);
+
+  // Broadcast State
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [selectedClients, setSelectedClients] = useState([]);
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastSentCount, setBroadcastSentCount] = useState(0);
+
+  const MESSAGE_TEMPLATES = [
+    {
+      label: '🏠 New Property Launch',
+      text: `🏗️ *New Project Launch Alert!*\n\nHello {name},\n\nWe are excited to introduce a brand new project:\n\n🏢 *Project Name:* [Enter Project]\n📍 *Location:* [Enter Location]\n🛏️ *Config:* 1/2/3 BHK\n💰 *Starting:* ₹ [Price]\n\n✅ RERA Registered\n✅ Premium Amenities\n\nBook your FREE site visit now!\n\n— *PropEmpire*\n📞 Contact us for details`
+    },
+    {
+      label: '🔥 Limited Time Offer',
+      text: `🔥 *Exclusive Offer — Limited Period!*\n\nHi {name},\n\nGreat news! We have a special offer on:\n\n🏢 *Project:* [Enter Project]\n🎁 *Offer:* [e.g. No Stamp Duty, Free Modular Kitchen]\n⏳ *Valid Till:* [Date]\n\nDon't miss this opportunity!\n\n— *PropEmpire*`
+    },
+    {
+      label: '📋 Follow-up Reminder',
+      text: `Hello {name},\n\nThis is a gentle follow-up from *PropEmpire*.\n\nWe had discussed about properties matching your requirements. Would you like to schedule a site visit this weekend?\n\nLet us know your convenient time.\n\nRegards,\n*PropEmpire*`
+    },
+    {
+      label: '✍️ Custom Message',
+      text: ''
+    }
+  ];
 
   const loadClients = async () => {
     const data = await getClients();
@@ -100,13 +126,71 @@ export default function Clients() {
     return digits;
   };
 
+  const toggleClientSelection = (id) => {
+    setSelectedClients(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const clientsWithPhone = filteredClients.filter(c => c.phone);
+    if (selectedClients.length === clientsWithPhone.length) {
+      setSelectedClients([]);
+    } else {
+      setSelectedClients(clientsWithPhone.map(c => c.id));
+    }
+  };
+
+  const openBroadcastModal = () => {
+    if (clients.filter(c => c.phone).length === 0) {
+      alert('No clients with phone numbers to broadcast to.');
+      return;
+    }
+    setSelectedClients([]);
+    setBroadcastMsg(MESSAGE_TEMPLATES[0].text);
+    setBroadcastSentCount(0);
+    setBroadcastSending(false);
+    setShowBroadcast(true);
+  };
+
+  const handleBroadcastSend = async () => {
+    const targets = clients.filter(c => selectedClients.includes(c.id) && c.phone);
+    if (targets.length === 0) {
+      alert('Please select at least one client with a phone number.');
+      return;
+    }
+    if (!broadcastMsg.trim()) {
+      alert('Please enter a message to send.');
+      return;
+    }
+    setBroadcastSending(true);
+    setBroadcastSentCount(0);
+
+    for (let i = 0; i < targets.length; i++) {
+      const client = targets[i];
+      const personalizedMsg = broadcastMsg.replace(/\{name\}/g, client.name || 'there');
+      const phone = formatWaNumber(client.phone);
+      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(personalizedMsg)}`;
+      window.open(waUrl, '_blank');
+      setBroadcastSentCount(i + 1);
+      // Small delay between opens so browser doesn't block popups
+      if (i < targets.length - 1) {
+        await new Promise(r => setTimeout(r, 800));
+      }
+    }
+    setBroadcastSending(false);
+  };
+
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '4rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <h1 style={{ margin: 0 }}>Clients & Leads</h1>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button className="btn btn-secondary" onClick={handleExportExcel} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={16} /> Export Excel
+            <FileText size={16} /> Export
+          </button>
+          <button className="btn btn-secondary" onClick={openBroadcastModal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', color: '#16a34a' }}>
+            <Radio size={16} /> Broadcast
           </button>
           <button className="btn btn-primary" onClick={() => setIsAdding(!isAdding)}>
             <UserPlus size={16} /> Add Client
@@ -299,6 +383,95 @@ export default function Clients() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
               <button className="btn btn-secondary" onClick={() => setClientToDelete(null)}>Cancel</button>
               <button className="btn btn-primary" style={{ backgroundColor: '#ef4444', border: 'none' }} onClick={() => handleDelete(clientToDelete.id)}>Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Broadcast Modal */}
+      {showBroadcast && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '550px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #25D366, #128C7E)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Radio size={20} color="white" />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem' }}>WhatsApp Broadcast</h2>
+                  <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Send property updates to multiple clients</p>
+                </div>
+              </div>
+              <button onClick={() => setShowBroadcast(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '0.5rem' }}>
+                <X size={22} />
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem 1.5rem' }}>
+              {/* Message Templates */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem', display: 'block' }}>Message Template</label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {MESSAGE_TEMPLATES.map((t, i) => (
+                    <button key={i} onClick={() => setBroadcastMsg(t.text)} 
+                      style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', borderRadius: '20px', border: '1px solid var(--border-color)', background: broadcastMsg === t.text ? 'var(--primary-blue)' : 'var(--bg-color)', color: broadcastMsg === t.text ? 'white' : 'var(--text-main)', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message Composer */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem', display: 'block' }}>Message <span style={{ fontWeight: 400, fontSize: '0.7rem' }}>(use {'{name}'} to personalize)</span></label>
+                <textarea className="form-input" rows="6" value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} style={{ fontSize: '0.85rem', lineHeight: '1.5', resize: 'vertical' }} />
+              </div>
+
+              {/* Client Selection */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Select Clients ({selectedClients.length} selected)</label>
+                  <button onClick={toggleSelectAll} style={{ fontSize: '0.8rem', color: 'var(--primary-blue)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}>
+                    {selectedClients.length === filteredClients.filter(c => c.phone).length ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-color)' }}>
+                  {filteredClients.filter(c => c.phone).length === 0 ? (
+                    <p style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>No clients with phone numbers found.</p>
+                  ) : (
+                    filteredClients.filter(c => c.phone).map(client => (
+                      <div key={client.id} onClick={() => toggleClientSelection(client.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderBottom: '1px solid var(--border-color)', cursor: 'pointer', backgroundColor: selectedClients.includes(client.id) ? '#eff6ff' : 'transparent', transition: 'background 0.15s' }}>
+                        {selectedClients.includes(client.id) ? <CheckSquare size={18} color="var(--primary-blue)" /> : <Square size={18} color="var(--text-muted)" />}
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: 0, fontWeight: '500', fontSize: '0.9rem' }}>{client.name}</p>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{client.phone}{client.project ? ` • ${client.project}` : ''}</p>
+                        </div>
+                        <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', backgroundColor: client.status === 'Closed' ? '#d1fae5' : client.status === 'Lost' ? '#fee2e2' : '#dbeafe', color: client.status === 'Closed' ? '#065f46' : client.status === 'Lost' ? '#991b1b' : '#1e40af' }}>{client.status}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              {broadcastSending ? (
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontWeight: '600', color: 'var(--primary-blue)' }}>Sending... {broadcastSentCount}/{selectedClients.length}</p>
+                  <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--border-color)', borderRadius: '4px', marginTop: '0.5rem', overflow: 'hidden' }}>
+                    <div style={{ width: `${(broadcastSentCount / selectedClients.length) * 100}%`, height: '100%', backgroundColor: '#25D366', borderRadius: '4px', transition: 'width 0.3s' }} />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button className="btn btn-secondary" onClick={() => setShowBroadcast(false)} style={{ flex: 1 }}>Cancel</button>
+                  <button className="btn btn-primary" onClick={handleBroadcastSend} disabled={selectedClients.length === 0} style={{ flex: 2, backgroundColor: '#25D366', borderColor: '#25D366', gap: '0.5rem', justifyContent: 'center', opacity: selectedClients.length === 0 ? 0.5 : 1 }}>
+                    <Send size={18} /> Send to {selectedClients.length} Client{selectedClients.length !== 1 ? 's' : ''}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
