@@ -267,11 +267,6 @@ export default function App() {
           <a href="#expertise" className="nav-link">Expertise</a>
           <a href="#contact" className="nav-link">Contact</a>
         </div>
-        <div className="nav-actions">
-          <button className="nav-btn" onClick={() => window.location.href = 'https://AtharvaKalhatkar.github.io/PropEmpire-/'}>
-            Agent Portal
-          </button>
-        </div>
       </nav>
 
       {/* ── HERO ── */}
