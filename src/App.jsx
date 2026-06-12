@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Home, FileText, Users, Settings as SettingsIcon, Bell, TrendingUp, Moon, Sun, MapPin } from 'lucide-react';
+import { Home, FileText, Users, Settings as SettingsIcon, Bell, TrendingUp, Moon, Sun, MapPin, Image } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Deals from './pages/Deals';
 import CreateInvoice from './pages/CreateInvoice';
 import Clients from './pages/Clients';
 import VisitedClients from './pages/VisitedClients';
 import Settings from './pages/Settings';
+import PropertyCards from './pages/PropertyCards';
 import logoImg from './assets/COMPANY_LOGO.png';
 
 function App() {
@@ -27,14 +28,14 @@ function App() {
       window.history.replaceState(null, '', '#dashboard');
     } else {
       const hashTab = window.location.hash.replace('#', '');
-      if (['dashboard', 'deals', 'invoice', 'clients', 'visited', 'settings'].includes(hashTab)) {
+      if (['dashboard', 'deals', 'invoice', 'clients', 'visited', 'settings', 'cards'].includes(hashTab)) {
         setActiveTab(hashTab);
       }
     }
 
     const handlePopState = () => {
       const hashTab = window.location.hash.replace('#', '');
-      if (['dashboard', 'deals', 'invoice', 'clients', 'visited', 'settings'].includes(hashTab)) {
+      if (['dashboard', 'deals', 'invoice', 'clients', 'visited', 'settings', 'cards'].includes(hashTab)) {
         setActiveTab(hashTab);
       } else {
         setActiveTab('dashboard');
@@ -88,6 +89,7 @@ function App() {
           {activeTab === 'clients' && <Clients />}
           {activeTab === 'visited' && <VisitedClients />}
           {activeTab === 'settings' && <Settings />}
+          {activeTab === 'cards' && <PropertyCards />}
         </main>
       </div>
 
@@ -112,6 +114,10 @@ function App() {
         <a href="#clients" className={`nav-item ${activeTab === 'clients' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('clients'); }}>
           <Users />
           <span>Clients</span>
+        </a>
+        <a href="#cards" className={`nav-item ${activeTab === 'cards' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('cards'); }}>
+          <Image />
+          <span>Cards</span>
         </a>
       </nav>
     </div>

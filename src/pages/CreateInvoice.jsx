@@ -48,11 +48,12 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
     getInvoices().then(invoices => {
       // Auto-increment invoice number based on existing ONLY if not editing
       if (!editingInvoice) {
-        const maxNo = invoices.reduce((max, inv) => {
-          const num = parseInt(inv.invoiceNo, 10);
-          return (!isNaN(num) && num > max) ? num : max;
-        }, 0);
-        setFormData(prev => ({ ...prev, invoiceNo: String(maxNo + 1) }));
+        // Only consider simple numeric invoice numbers (ignore old 26xxx format)
+        const simpleNums = invoices
+          .map(inv => parseInt(inv.invoiceNo, 10))
+          .filter(n => !isNaN(n) && n < 1000);
+        const nextNo = simpleNums.length > 0 ? Math.max(...simpleNums) + 1 : invoices.length + 1;
+        setFormData(prev => ({ ...prev, invoiceNo: String(nextNo) }));
       }
     }).catch(() => {});
   }, [editingInvoice]);
@@ -350,10 +351,10 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
         </div>
       </div>
 
-      {/* Invoice Created Success Modal */}
+      {/* Invoice Created Success Modal - Full screen fixed overlay */}
       {showActionModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="animate-fade-in card" style={{ width: '100%', maxWidth: '420px', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', overflow: 'hidden' }}>
+          <div className="animate-fade-in card" style={{ width: '100%', maxWidth: '400px', padding: '2rem', textAlign: 'center', margin: '0 auto' }}>
             
             {/* Success Icon */}
             <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem auto', boxShadow: '0 8px 20px rgba(16,185,129,0.3)' }}>
