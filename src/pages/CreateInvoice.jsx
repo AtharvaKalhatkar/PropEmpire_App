@@ -4,7 +4,7 @@ import InvoiceTemplate from '../components/InvoiceTemplate';
 import { generateInvoicePdfBlob } from '../utils/invoiceTemplate';
 import { saveInvoice, getProfile, getInvoices } from '../db';
 import { downloadPdfBlob } from '../utils/pdf';
-import { Download, Share2, MessageCircle, Mail, X } from 'lucide-react';
+import { Download, Share2, MessageCircle, X } from 'lucide-react';
 
 export default function CreateInvoice({ onNavigate, editingInvoice, setEditingInvoice }) {
   const [profile, setProfile] = useState(null);
@@ -277,9 +277,7 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
             <input type="text" className="form-input" name="customerPhone" value={formData.customerPhone} onChange={handleChange} />
           </div>
           <div className="form-group" style={{ marginBottom: 0, gridColumn: '1 / -1' }}>
-            <label className="form-label">Customer Email (For Email Sending)</label>
-            <input type="email" className="form-input" name="customerEmail" value={formData.customerEmail} onChange={handleChange} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>* Phone & Email won't be displayed on the final invoice PDF.</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>* Phone won't be displayed on the final invoice PDF.</span>
           </div>
         </div>
         <div className="form-grid-3">
@@ -369,12 +367,9 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
                 <FileText size={20} style={{ marginRight: '0.75rem' }} /> {isGeneratingPdf ? 'Generating...' : 'Open as PDF'}
               </button>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <button className="btn btn-secondary" onClick={handleShareWhatsApp} disabled={isGeneratingPdf} style={{ padding: '0.875rem', fontSize: '0.9rem', justifyContent: 'center', backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', color: '#16a34a' }}>
                   <MessageCircle size={18} style={{ marginRight: '0.5rem' }} /> WhatsApp
-                </button>
-                <button className="btn btn-secondary" onClick={handleShareEmail} disabled={isGeneratingPdf} style={{ padding: '0.875rem', fontSize: '0.9rem', justifyContent: 'center', backgroundColor: '#eef2ff', borderColor: '#c7d2fe', color: '#6366f1' }}>
-                  <Mail size={18} style={{ marginRight: '0.5rem' }} /> Email
                 </button>
               </div>
               
