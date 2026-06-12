@@ -28,25 +28,29 @@ export const exportRowsToXlsx = async ({ rows, sheetName, fileName }) => {
   
   const columnsCount = Object.keys(rows[0]).length;
   
-  // Row 1: Professional Title Banner
+  // Row 1: Company Brand
   worksheet.mergeCells(1, 1, 1, columnsCount);
-  const titleCell = worksheet.getCell(1, 1);
-  titleCell.value = `PropEmpire - ${sheetName}`;
-  titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } }; // Slate 900
-  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  const brandCell = worksheet.getCell(1, 1);
+  brandCell.value = 'PROP EMPIRE';
+  brandCell.font = { name: 'Segoe UI', size: 22, bold: true, color: { argb: 'FF0F172A' } }; // Deep Navy
+  brandCell.alignment = { horizontal: 'left', vertical: 'middle' };
   worksheet.getRow(1).height = 35;
 
-  // Row 2: Metadata / Date
+  // Row 2: Report Title
   worksheet.mergeCells(2, 1, 2, columnsCount);
-  const dateCell = worksheet.getCell(2, 1);
-  dateCell.value = `Exported on: ${new Date().toLocaleString()}`;
-  dateCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF475569' } }; // Slate 600
-  dateCell.alignment = { horizontal: 'right', vertical: 'middle' };
+  const titleCell = worksheet.getCell(2, 1);
+  titleCell.value = `${sheetName.toUpperCase()} REPORT`;
+  titleCell.font = { name: 'Segoe UI', size: 12, bold: true, color: { argb: 'FFD4AF37' } }; // Champagne Gold
+  titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
   worksheet.getRow(2).height = 20;
 
-  // Row 3: Spacer
-  worksheet.getRow(3).height = 10;
+  // Row 3: Metadata
+  worksheet.mergeCells(3, 1, 3, columnsCount);
+  const dateCell = worksheet.getCell(3, 1);
+  dateCell.value = `Generated on: ${new Date().toLocaleString()}`;
+  dateCell.font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF64748B' } }; // Slate Gray
+  dateCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  worksheet.getRow(3).height = 20;
 
   // Setup columns
   const keys = Object.keys(rows[0]);
@@ -54,43 +58,39 @@ export const exportRowsToXlsx = async ({ rows, sheetName, fileName }) => {
 
   // Row 4: Headers
   const headerRow = worksheet.getRow(4);
-  // Format camelCase to Title Case (e.g. clientName -> Client Name)
   headerRow.values = keys.map(k => k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()));
-  headerRow.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  headerRow.height = 25;
+  headerRow.height = 30;
   
   headerRow.eachCell((cell) => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF334155' } }; // Slate 700
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } }; // Deep Navy
     cell.border = {
-      top: { style: 'thin', color: { argb: 'FF94A3B8' } },
-      left: { style: 'thin', color: { argb: 'FF94A3B8' } },
-      bottom: { style: 'thin', color: { argb: 'FF94A3B8' } },
-      right: { style: 'thin', color: { argb: 'FF94A3B8' } }
+      bottom: { style: 'medium', color: { argb: 'FFD4AF37' } } // Gold accent border
     };
   });
 
-  // Freeze top panes so headers are always visible when scrolling
-  worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 4 }];
+  // Freeze top panes & HIDE GRIDLINES for a clean PDF-like look
+  worksheet.views = [{ showGridLines: false, state: 'frozen', xSplit: 0, ySplit: 4 }];
 
-  // Add Data Rows with Zebra Striping
-  rows.forEach((row, index) => {
+  // Add Data Rows
+  rows.forEach((row) => {
     const newRow = worksheet.addRow(row);
-    newRow.height = 22;
+    newRow.height = 25;
     
-    const isEven = index % 2 === 0;
-    const bgColor = isEven ? 'FFF8FAFC' : 'FFFFFFFF'; // Slate 50 / Pure White
-
     newRow.eachCell({ includeEmpty: true }, (cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+      // Clean white background
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+      
+      // Only bottom border for a sleek modern grid
       cell.border = {
-        top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-        left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-        right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } }
       };
+      
+      cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF334155' } };
       cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true, indent: 1 };
-      // Try to format numbers if applicable
+      
+      // Auto-align numbers to right
       if (!isNaN(cell.value) && cell.value !== '') {
         cell.alignment.horizontal = 'right';
       }
@@ -106,7 +106,8 @@ export const exportRowsToXlsx = async ({ rows, sheetName, fileName }) => {
         maxLength = columnLength;
       }
     });
-    column.width = maxLength < 15 ? 15 : maxLength > 40 ? 40 : maxLength + 4;
+    // Add extra padding for the clean look
+    column.width = maxLength < 15 ? 15 : maxLength > 50 ? 50 : maxLength + 5;
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
