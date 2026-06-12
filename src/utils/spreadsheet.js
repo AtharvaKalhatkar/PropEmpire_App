@@ -52,62 +52,45 @@ export const exportRowsToXlsx = async ({ rows, sheetName, fileName }) => {
   dateCell.alignment = { horizontal: 'left', vertical: 'middle' };
   worksheet.getRow(3).height = 20;
 
-  // Setup columns
+  // Setup Native Excel Table
   const keys = Object.keys(rows[0]);
-  worksheet.columns = keys.map((key) => ({ key, width: 20 }));
-
-  // Row 4: Headers
-  const headerRow = worksheet.getRow(4);
-  headerRow.values = keys.map(k => k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()));
-  headerRow.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-  headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-  headerRow.height = 30;
   
-  headerRow.eachCell((cell) => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } }; // Deep Navy
-    cell.border = {
-      bottom: { style: 'medium', color: { argb: 'FFD4AF37' } } // Gold accent border
-    };
+  // Create table columns
+  const tableColumns = keys.map(k => ({
+    name: k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+    filterButton: true
+  }));
+
+  // Create table rows (array of arrays)
+  const tableRows = rows.map(row => keys.map(key => row[key] == null ? '' : row[key]));
+
+  worksheet.addTable({
+    name: 'ExportTable',
+    ref: 'A4',
+    headerRow: true,
+    totalsRow: false,
+    style: {
+      theme: 'TableStyleMedium2', // Professional blue table style with zebra striping
+      showRowStripes: true,
+    },
+    columns: tableColumns,
+    rows: tableRows
   });
 
-  // Freeze top panes & HIDE GRIDLINES for a clean PDF-like look
+  // Freeze top panes so headers are always visible when scrolling
   worksheet.views = [{ showGridLines: false, state: 'frozen', xSplit: 0, ySplit: 4 }];
 
-  // Add Data Rows
-  rows.forEach((row) => {
-    const newRow = worksheet.addRow(row);
-    newRow.height = 25;
-    
-    newRow.eachCell({ includeEmpty: true }, (cell) => {
-      // Clean white background
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
-      
-      // Only bottom border for a sleek modern grid
-      cell.border = {
-        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } }
-      };
-      
-      cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF334155' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true, indent: 1 };
-      
-      // Auto-align numbers to right
-      if (!isNaN(cell.value) && cell.value !== '') {
-        cell.alignment.horizontal = 'right';
-      }
-    });
-  });
-
   // Auto-fit columns dynamically based on content length
-  worksheet.columns.forEach((column) => {
-    let maxLength = 0;
-    column.eachCell({ includeEmpty: true }, (cell) => {
-      const columnLength = cell.value ? cell.value.toString().length : 10;
-      if (columnLength > maxLength) {
-        maxLength = columnLength;
+  // Auto-fit columns dynamically based on content length
+  worksheet.columns = keys.map((key, index) => {
+    let maxLength = tableColumns[index].name.length;
+    tableRows.forEach(row => {
+      const cellValue = row[index] ? row[index].toString() : '';
+      if (cellValue.length > maxLength) {
+        maxLength = cellValue.length;
       }
     });
-    // Add extra padding for the clean look
-    column.width = maxLength < 15 ? 15 : maxLength > 50 ? 50 : maxLength + 5;
+    return { width: maxLength < 15 ? 15 : maxLength > 50 ? 50 : maxLength + 5 };
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
