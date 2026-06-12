@@ -11,7 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       workbox: {
-        maximumFileSizeToCacheInBytes: 5000000
+        maximumFileSizeToCacheInBytes: 5000000,
+        navigateFallbackDenylist: [/^\/PropEmpire-\/website/]
       },
       manifest: {
         name: 'PropEmpire Partner Hub',
