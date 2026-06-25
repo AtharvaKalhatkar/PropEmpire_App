@@ -2,9 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
 export default defineConfig({
-  base: '/PropEmpire-/',
+  base: './',
   plugins: [
     react(),
     VitePWA({
@@ -12,17 +11,16 @@ export default defineConfig({
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       workbox: {
         maximumFileSizeToCacheInBytes: 5000000,
-        navigateFallbackDenylist: [/^\/PropEmpire-\/website/]
       },
       manifest: {
-        name: 'PropEmpire Partner Hub',
+        name: 'PropEmpire',
         short_name: 'PropEmpire',
-        description: 'Real Estate Channel Partner App for Invoicing and CRM',
-        theme_color: '#0A2540',
-        background_color: '#F8FAFC',
+        description: 'Real Estate CRM, Invoicing & Deal Management',
+        theme_color: '#2563eb',
+        background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/PropEmpire-/',
-        scope: '/PropEmpire-/',
+        start_url: './',
+        scope: './',
         icons: [
           {
             src: 'pwa-192x192.png',

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Download, Calendar, DollarSign, Eye, X, Printer, MessageCircle, Mail } from 'lucide-react';
+import { FileText, Download, Calendar, DollarSign, Eye, X, MessageCircle, Mail } from 'lucide-react';
 import { getInvoices, getProfile, deleteInvoice } from '../db';
 import { generateInvoicePdfBlob } from '../utils/invoiceTemplate';
 import { downloadPdfBlob } from '../utils/pdf';
@@ -9,306 +9,223 @@ import { exportRowsToXlsx } from '../utils/spreadsheet';
 export default function Deals({ onEditInvoice }) {
   const [invoices, setInvoices] = useState([]);
   const [profile, setProfile] = useState(null);
-  
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [viewingInvoice, setViewingInvoice] = useState(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-  const loadInvoices = () => {
-    getInvoices().then(setInvoices);
-  };
+  const loadInvoices = () => getInvoices().then(setInvoices);
 
   useEffect(() => {
     loadInvoices();
     getProfile().then(p => setProfile(p || {}));
   }, []);
 
-  // Filter invoices based on selected month (YYYY-MM format)
-  const filteredInvoices = invoices.filter(inv => {
-    if (!inv.date) return false;
-    return inv.date.startsWith(selectedMonth);
-  });
+  const filteredInvoices = invoices.filter(inv => inv.date?.startsWith(selectedMonth));
 
-  // Calculate revenue for filtered month
   const totalRevenue = filteredInvoices.reduce((sum, inv) => {
     const broker = (Number(inv.agreementValue) * Number(inv.brokeragePercent)) / 100;
     return sum + broker + Number(inv.executiveBonus);
   }, 0);
 
-  const calculateBrokerage = (inv) => {
-    return (Number(inv.agreementValue) * Number(inv.brokeragePercent)) / 100;
+  const calcBroker = (inv) => (Number(inv.agreementValue) * Number(inv.brokeragePercent)) / 100;
+  const calcTotal = (inv) => calcBroker(inv) + Number(inv.executiveBonus);
+
+  const genPdf = async (inv) => {
+    if (!profile) return null;
+    return generateInvoicePdfBlob({
+      data: inv, profile,
+      brokerageAmount: calcBroker(inv),
+      totalAmount: calcTotal(inv),
+      executiveBonus: Number(inv.executiveBonus),
+    });
   };
 
-  const calculateTotal = (inv) => {
-    return calculateBrokerage(inv) + Number(inv.executiveBonus);
-  };
-
-  const getFileName = (inv) => {
-    return `Invoice_${inv.customerName.replace(/\s+/g, '_') || 'PropEmpire'}.pdf`;
-  };
-
-  const handleDownloadPdf = async (invoice) => {
+  const handleDownload = async (inv) => {
     setIsGeneratingPdf(true);
     try {
-      const blob = await generateInvoicePdfBlob({
-        data: invoice,
-        profile,
-        brokerageAmount: calculateBrokerage(invoice),
-        totalAmount: calculateTotal(invoice),
-        executiveBonus: Number(invoice.executiveBonus),
-      });
-      if (blob) {
-        const fileName = `Invoice_${invoice.customerName.replace(/\s+/g, '_') || 'PropEmpire'}.pdf`;
-        downloadPdfBlob(blob, fileName);
-      }
+      const blob = await genPdf(inv);
+      if (blob) downloadPdfBlob(blob, `Invoice_${(inv.customerName || '').replace(/\s+/g, '_')}.pdf`);
     } catch (e) {
-      console.error("Error generating PDF:", e);
-      alert("Failed to generate PDF.");
+      alert('Failed to generate PDF');
     } finally {
       setIsGeneratingPdf(false);
     }
   };
 
-  const handleExportExcel = () => {
-    if (filteredInvoices.length === 0) {
-      alert("No bills to export for this month.");
-      return;
-    }
-    const exportData = filteredInvoices.map((inv, index) => ({
-      'Invoice No': inv.invoiceNo,
-      'Date': inv.date ? new Date(inv.date).toLocaleDateString('en-GB') : '',
-      'Customer Name': inv.customerName,
-      'Project Name': inv.projectName,
-      'Tower': inv.tower || '',
-      'Flat No': inv.flatNo || '',
-      'Agreement Value': Number(inv.agreementValue),
-      'Brokerage %': inv.brokeragePercent,
-      'Brokerage Amount': calculateBrokerage(inv),
-      'Executive Bonus': Number(inv.executiveBonus) || 0,
-      'Total Revenue': calculateTotal(inv)
-    }));
-    exportRowsToXlsx({ rows: exportData, sheetName: 'Invoices', fileName: `PropEmpire_Invoices_${selectedMonth}.xlsx` });
-  };
-
-  const handleOpenPdf = async (invoice) => {
+  const handleView = async (inv) => {
     setIsGeneratingPdf(true);
     try {
-      const blob = await generateInvoicePdfBlob({
-        data: invoice,
-        profile,
-        brokerageAmount: calculateBrokerage(invoice),
-        totalAmount: calculateTotal(invoice),
-        executiveBonus: Number(invoice.executiveBonus),
-      });
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-      }
+      const blob = await genPdf(inv);
+      if (blob) window.open(URL.createObjectURL(blob), '_blank');
     } catch (e) {
-      console.error("Error generating PDF:", e);
-      alert("Failed to generate PDF.");
+      alert('Failed to generate PDF');
     } finally {
       setIsGeneratingPdf(false);
     }
   };
 
-  const handleShareWhatsApp = async (invoice) => {
-    const digits = invoice.customerPhone ? invoice.customerPhone.replace(/\D/g, '') : '';
-    const phone = digits.length === 10 ? `91${digits}` : digits;
-    const text = `Hello ${invoice.customerName},\n\nPlease find attached the invoice for ${invoice.projectName}.\n\nRegards,\nPropEmpire`;
-    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-
+  const handleWhatsApp = async (inv) => {
+    const phone = inv.customerPhone?.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${phone?.length === 10 ? '91' + phone : phone || ''}?text=${encodeURIComponent(`Hello ${inv.customerName},\n\nPlease find attached the invoice for ${inv.projectName}.\n\nRegards,\nPropEmpire`)}`;
     setIsGeneratingPdf(true);
     try {
-      const blob = await generateInvoicePdfBlob({
-        data: invoice,
-        profile,
-        brokerageAmount: calculateBrokerage(invoice),
-        totalAmount: calculateTotal(invoice),
-        executiveBonus: Number(invoice.executiveBonus),
-      });
-      const file = new File([blob], getFileName(invoice), { type: 'application/pdf' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Invoice', text: text });
+      const blob = await genPdf(inv);
+      const file = new File([blob], `Invoice_${inv.customerName?.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Invoice', text: `Invoice for ${inv.projectName}` });
       } else {
-        handleDownloadPdf(invoice);
+        handleDownload(inv);
         window.open(waUrl, '_blank');
       }
-    } catch (error) {
-      handleDownloadPdf(invoice);
+    } catch {
+      handleDownload(inv);
       window.open(waUrl, '_blank');
     } finally {
       setIsGeneratingPdf(false);
     }
   };
 
-  const handleShareEmail = async (invoice) => {
-    const subject = encodeURIComponent(`Invoice for ${invoice.projectName}`);
-    const body = encodeURIComponent(`Hello ${invoice.customerName},\n\nPlease find the attached invoice for your reference.\n\nRegards,\n${profile?.agentName || 'PropEmpire'}`);
-    const emailUrl = `mailto:${invoice.customerEmail || ''}?subject=${subject}&body=${body}`;
-
+  const handleEmail = async (inv) => {
+    const subject = encodeURIComponent(`Invoice for ${inv.projectName}`);
+    const body = encodeURIComponent(`Hello ${inv.customerName},\n\nPlease find the attached invoice.\n\nRegards,\n${profile?.agentName || 'PropEmpire'}`);
     setIsGeneratingPdf(true);
     try {
-      const blob = await generateInvoicePdfBlob({
-        data: invoice,
-        profile,
-        brokerageAmount: calculateBrokerage(invoice),
-        totalAmount: calculateTotal(invoice),
-        executiveBonus: Number(invoice.executiveBonus),
-      });
-      const file = new File([blob], getFileName(invoice), { type: 'application/pdf' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Invoice', text: `Invoice for ${invoice.projectName}` });
+      const blob = await genPdf(inv);
+      const file = new File([blob], `Invoice_${inv.customerName?.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Invoice' });
       } else {
-        handleDownloadPdf(invoice);
-        window.location.href = emailUrl;
+        handleDownload(inv);
+        window.location.href = `mailto:${inv.customerEmail || ''}?subject=${subject}&body=${body}`;
       }
-    } catch (error) {
-      handleDownloadPdf(invoice);
-      window.location.href = emailUrl;
+    } catch {
+      handleDownload(inv);
+      window.location.href = `mailto:${inv.customerEmail || ''}?subject=${subject}&body=${body}`;
     } finally {
       setIsGeneratingPdf(false);
     }
   };
 
-  const handleDeleteInvoice = async (invoice) => {
-    if (window.confirm(`Are you sure you want to delete invoice #${invoice.invoiceNo} for ${invoice.customerName}?`)) {
+  const handleDelete = async (inv) => {
+    if (window.confirm(`Delete invoice #${inv.invoiceNo} for ${inv.customerName}?`)) {
       try {
-        await deleteInvoice(invoice.id);
+        await deleteInvoice(inv.id);
         loadInvoices();
-      } catch (e) {
-        alert("Failed to delete invoice.");
-      }
+      } catch { alert('Failed to delete invoice'); }
     }
   };
 
+  const handleExport = () => {
+    if (!filteredInvoices.length) return alert('No invoices to export');
+    const data = filteredInvoices.map(inv => ({
+      'Invoice No': inv.invoiceNo,
+      'Date': inv.date ? new Date(inv.date).toLocaleDateString('en-GB') : '',
+      'Customer': inv.customerName,
+      'Project': inv.projectName,
+      'Tower': inv.tower || '',
+      'Flat': inv.flatNo || '',
+      'Agreement Value': Number(inv.agreementValue),
+      'Brokerage %': inv.brokeragePercent,
+      'Brokerage Amt': calcBroker(inv),
+      'Bonus': Number(inv.executiveBonus) || 0,
+      'Total': calcTotal(inv),
+    }));
+    exportRowsToXlsx({ rows: data, sheetName: 'Invoices', fileName: `Invoices_${selectedMonth}.xlsx` });
+  };
+
+  const monthLabel = new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' });
+
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '4rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h1 style={{ margin: 0 }}>Deals & Bills</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--surface-color)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)' }}>
-            <Calendar size={18} color="var(--primary-blue)" />
-            <input 
-              type="month" 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              style={{ border: 'none', outline: 'none', background: 'transparent', fontWeight: 'bold', color: 'var(--text-main)', fontSize: '1rem' }}
-            />
-          </div>
-          <button className="btn btn-secondary" onClick={handleExportExcel} style={{ padding: '0.5rem 1rem' }}>
-            <FileText size={18} /> Export
-          </button>
-        </div>
+    <div>
+      <div className="flex items-center justify-between mb-16">
+        <h1 style={{ margin: 0 }}>Deals</h1>
       </div>
 
-      <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--gradient-primary)', color: 'white' }}>
-        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '1rem', borderRadius: '50%' }}>
-          <DollarSign size={32} />
+      <div className="flex items-center gap-8 mb-16">
+        <div className="flex items-center gap-8" style={{ background: 'var(--bg)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+          <Calendar size={16} style={{ color: 'var(--primary)' }} />
+          <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}
+            style={{ border: 'none', outline: 'none', background: 'transparent', fontWeight: 600, fontSize: 14, color: 'var(--text)' }} />
         </div>
-        <div style={{ overflow: 'hidden' }}>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-light)', opacity: 0.9 }}>Total Revenue ({new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })})</p>
-          <h2 style={{ margin: 0, fontSize: 'clamp(1.5rem, 6vw, 2.5rem)', fontWeight: '800', color: 'white', wordBreak: 'break-word' }}>₹ {Math.round(totalRevenue).toLocaleString('en-IN')}</h2>
+        <button className="btn btn-secondary" onClick={handleExport} style={{ padding: '6px 12px', fontSize: 12 }}>
+          <FileText size={14} /> Export
+        </button>
+      </div>
+
+      <div className="card mb-16" style={{ background: 'var(--primary)', color: 'white', border: 'none' }}>
+        <div className="flex items-center gap-12">
+          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '50%', padding: 10 }}>
+            <DollarSign size={24} />
+          </div>
+          <div>
+            <div className="text-sm" style={{ opacity: 0.9 }}>Revenue ({monthLabel})</div>
+            <div style={{ fontSize: 24, fontWeight: 800 }}>₹ {Math.round(totalRevenue).toLocaleString('en-IN')}</div>
+          </div>
         </div>
       </div>
 
       <div className="card" style={{ padding: 0 }}>
         {filteredInvoices.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <FileText size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.5 }} />
-            <p>No bills generated in this month.</p>
+          <div className="empty-state">
+            <FileText size={40} />
+            <p>No invoices this month</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)' }}>
-                  <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Inv #</th>
-                  <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Date</th>
-                  <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Customer</th>
-                  <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Project</th>
-                  <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Revenue</th>
-                  <th style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInvoices.map(inv => (
-                  <tr key={inv.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '1rem' }}>{inv.invoiceNo}</td>
-                    <td style={{ padding: '1rem' }}>{new Date(inv.date).toLocaleDateString('en-GB')}</td>
-                    <td style={{ padding: '1rem', fontWeight: '500' }}>{inv.customerName}</td>
-                    <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{inv.projectName}</td>
-                    <td style={{ padding: '1rem', fontWeight: '600', color: 'var(--primary-blue)' }}>₹ {calculateTotal(inv).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '1rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                        <button 
-                          onClick={() => setViewingInvoice(inv)} 
-                          className="btn btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                        >
-                          <Eye size={14} /> View
-                        </button>
-                        <button 
-                          onClick={() => onEditInvoice && onEditInvoice(inv)} 
-                          className="btn btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'var(--primary-blue)', borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}
-                        >
-                          <Edit2 size={14} /> Edit
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteInvoice(inv)} 
-                          className="btn btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#ef4444', borderColor: '#fca5a5', backgroundColor: '#fef2f2' }}
-                        >
-                          <X size={14} /> Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div>
+            {filteredInvoices.map(inv => (
+              <div key={inv.id} className="invoice-row" style={{ padding: '12px 16px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="flex items-center gap-8">
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>{inv.customerName}</span>
+                    <span className="badge badge-blue">#{inv.invoiceNo}</span>
+                  </div>
+                  <div className="text-sm text-muted">{inv.projectName} • {new Date(inv.date).toLocaleDateString('en-GB')}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="amount">₹ {Math.round(calcTotal(inv)).toLocaleString('en-IN')}</div>
+                  <div className="flex gap-8" style={{ marginTop: 4, justifyContent: 'flex-end' }}>
+                    <button onClick={() => setViewingInvoice(inv)} className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: 11 }}><Eye size={12} /></button>
+                    <button onClick={() => onEditInvoice?.(inv)} className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: 11, color: 'var(--primary)' }}><Edit2 size={12} /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Action Modal */}
       {viewingInvoice && profile && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Invoice #{viewingInvoice.invoiceNo}</h2>
-              <button onClick={() => setViewingInvoice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-main)', padding: '0.5rem' }}>
-                <X size={24} />
+        <div className="modal-overlay" onClick={() => setViewingInvoice(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-16">
+              <h2>Invoice #{viewingInvoice.invoiceNo}</h2>
+              <button onClick={() => setViewingInvoice(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                <X size={20} />
               </button>
             </div>
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Choose an action for this invoice.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <button className="btn btn-primary" onClick={() => handleDownloadPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ width: '100%' }}>
+            <div className="grid-2">
+              <button className="btn btn-primary" onClick={() => handleDownload(viewingInvoice)} disabled={isGeneratingPdf}>
                 <Download size={16} /> Save PDF
               </button>
-              <button className="btn btn-primary" onClick={() => handleOpenPdf(viewingInvoice)} disabled={isGeneratingPdf} style={{ width: '100%', backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}>
-                <FileText size={16} /> Open PDF
+              <button className="btn btn-primary" onClick={() => handleView(viewingInvoice)} disabled={isGeneratingPdf} style={{ background: '#f59e0b' }}>
+                <Eye size={16} /> View
               </button>
-              <button className="btn btn-secondary" onClick={() => handleShareWhatsApp(viewingInvoice)} disabled={isGeneratingPdf} style={{ width: '100%', backgroundColor: '#25D366', color: 'white', borderColor: '#25D366' }}>
+              <button className="btn btn-success" onClick={() => handleWhatsApp(viewingInvoice)} disabled={isGeneratingPdf}>
                 <MessageCircle size={16} /> WhatsApp
               </button>
-              <button className="btn btn-secondary" onClick={() => handleShareEmail(viewingInvoice)} disabled={isGeneratingPdf} style={{ width: '100%' }}>
+              <button className="btn btn-secondary" onClick={() => handleEmail(viewingInvoice)} disabled={isGeneratingPdf}>
                 <Mail size={16} /> Email
               </button>
             </div>
           </div>
         </div>
       )}
-      
-      {/* Show a loading overlay if generating */}
+
       {isGeneratingPdf && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ color: 'var(--text-main)' }}>Processing...</div>
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ textAlign: 'center' }}>
+            <p>Generating PDF...</p>
+          </div>
         </div>
       )}
     </div>

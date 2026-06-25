@@ -1,402 +1,220 @@
 import { useState, useEffect } from 'react';
-import { MapPin, UserPlus, Phone, Trash2, Calendar, FileText, ChevronDown, ChevronUp, Search, MessageCircle, CheckSquare, Square, Filter, X } from 'lucide-react';
+import { MapPin, Plus, Phone, Trash2, Search, MessageCircle, Calendar, FileText, ChevronDown, ChevronUp, Filter, X, CheckSquare, Square } from 'lucide-react';
 import { getVisitedClients, saveVisitedClient, deleteVisitedClient } from '../db';
-import { exportRowsToCsv, exportRowsToXlsx } from '../utils/spreadsheet';
+import { exportRowsToXlsx, exportRowsToCsv } from '../utils/spreadsheet';
+
+const initialForm = { visit_date: new Date().toISOString().split('T')[0], name: '', phone: '', project: '', properties: [], budget: '', notes: '' };
+const PROPERTY_OPTIONS = ['1 BHK', '2 BHK', '3 BHK', '4 BHK', 'Villa', 'Plot', 'Commercial'];
 
 export default function VisitedClients() {
   const [clients, setClients] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
-  
-  // Search and Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilterFrom, setDateFilterFrom] = useState('');
-  const [dateFilterTo, setDateFilterTo] = useState('');
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [form, setForm] = useState(initialForm);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  
-  const initialForm = { 
-    visit_date: todayStr,
-    name: '', 
-    phone: '', 
-    project: '', 
-    properties: [], // Array for multiple options
-    budget: '',
-    notes: '' 
+  const loadClients = () => getVisitedClients().then(setClients);
+  useEffect(() => { loadClients(); }, []);
+
+  const filtered = clients.filter(c => {
+    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone && c.phone.includes(search));
+    let matchDate = true;
+    if (dateFrom || dateTo) {
+      const d = new Date(c.visit_date); d.setHours(0, 0, 0, 0);
+      if (dateFrom) { const f = new Date(dateFrom); f.setHours(0,0,0,0); if (d < f) matchDate = false; }
+      if (dateTo) { const t = new Date(dateTo); t.setHours(0,0,0,0); if (d > t) matchDate = false; }
+    }
+    return matchSearch && matchDate;
+  });
+
+  const handleAdd = async e => {
+    e.preventDefault();
+    if (!form.name) return;
+    try {
+      await saveVisitedClient({ ...form, properties: JSON.stringify(form.properties) });
+      setForm(initialForm);
+      setIsAdding(false);
+      loadClients();
+    } catch { alert('Failed to save'); }
   };
-  const [newClient, setNewClient] = useState(initialForm);
-  const [clientToDelete, setClientToDelete] = useState(null);
 
-  const loadClients = async () => {
-    const data = await getVisitedClients();
-    setClients(data);
+  const handleDelete = async id => {
+    try {
+      await deleteVisitedClient(id);
+      setDeleteTarget(null);
+      loadClients();
+    } catch { alert('Failed to delete'); }
+  };
+
+  const toggleProp = opt => setForm(prev => ({
+    ...prev,
+    properties: prev.properties.includes(opt) ? prev.properties.filter(p => p !== opt) : [...prev.properties, opt],
+  }));
+
+  const formatWa = p => { const d = p.replace(/\D/g, ''); return d.length === 10 ? `91${d}` : d; };
+
+  const renderProps = (data) => {
+    let arr = [];
+    if (Array.isArray(data)) arr = data;
+    else if (typeof data === 'string') { try { arr = JSON.parse(data); if (!Array.isArray(arr)) arr = [data]; } catch { arr = [data]; } }
+    return arr.length ? arr.map((p, i) => <span key={i} className="badge badge-blue" style={{ marginRight: 4, marginBottom: 4 }}>{p}</span>) : 'N/A';
   };
 
   const handleExportExcel = () => {
-    if (clients.length === 0) {
-      alert("No clients to export.");
-      return;
-    }
-    const exportData = clients.map((client, index) => {
-      let propsString = '';
-      if (Array.isArray(client.properties)) {
-        propsString = client.properties.join(', ');
-      } else if (typeof client.properties === 'string') {
-        try {
-          const parsed = JSON.parse(client.properties);
-          if (Array.isArray(parsed)) propsString = parsed.join(', ');
-          else propsString = client.properties;
-        } catch(e) {
-          propsString = client.properties;
-        }
-      }
-
-      return {
-        'Sr. No.': index + 1,
-        'Visit Date': client.visit_date ? new Date(client.visit_date).toLocaleDateString('en-GB') : '',
-        'Full Name': client.name || '',
-        'Mobile No': client.phone || '',
-        'Project Showed': client.project || '',
-        'Property Showed': propsString,
-        'Budget': client.budget || '',
-        'Notes': client.notes || ''
-      };
+    if (!clients.length) return alert('No data');
+    const data = clients.map((c, i) => {
+      let props = '';
+      if (Array.isArray(c.properties)) props = c.properties.join(', ');
+      else if (typeof c.properties === 'string') { try { const p = JSON.parse(c.properties); props = Array.isArray(p) ? p.join(', ') : c.properties; } catch { props = c.properties; } }
+      return { '#': i + 1, 'Date': c.visit_date ? new Date(c.visit_date).toLocaleDateString('en-GB') : '', 'Name': c.name, 'Phone': c.phone || '', 'Project': c.project || '', 'Properties': props, 'Budget': c.budget || '', 'Notes': c.notes || '' };
     });
-
-    exportRowsToXlsx({ rows: exportData, sheetName: 'Visited Clients', fileName: 'PropEmpire_Visited_Clients.xlsx' });
+    exportRowsToXlsx({ rows: data, sheetName: 'Visited Clients', fileName: 'PropEmpire_Visited.xlsx' });
   };
 
-  const handleExportCSV = () => {
-    if (clients.length === 0) {
-      alert("No clients to export.");
-      return;
-    }
-    const exportData = clients.map((client, index) => {
-      let propsString = '';
-      if (Array.isArray(client.properties)) {
-        propsString = client.properties.join(', ');
-      } else if (typeof client.properties === 'string') {
-        try {
-          const parsed = JSON.parse(client.properties);
-          if (Array.isArray(parsed)) propsString = parsed.join(', ');
-          else propsString = client.properties;
-        } catch(e) {
-          propsString = client.properties;
-        }
-      }
-
-      return {
-        'Sr. No.': index + 1,
-        'Visit Date': client.visit_date ? new Date(client.visit_date).toLocaleDateString('en-GB') : '',
-        'Full Name': client.name || '',
-        'Mobile No': client.phone || '',
-        'Project Showed': client.project || '',
-        'Property Showed': propsString,
-        'Budget': client.budget || '',
-        'Notes': client.notes || ''
-      };
+  const handleExportCsv = () => {
+    if (!clients.length) return alert('No data');
+    const data = clients.map((c, i) => {
+      let props = '';
+      if (Array.isArray(c.properties)) props = c.properties.join(', ');
+      else if (typeof c.properties === 'string') { try { const p = JSON.parse(c.properties); props = Array.isArray(p) ? p.join(', ') : c.properties; } catch { props = c.properties; } }
+      return { '#': i + 1, 'Date': c.visit_date ? new Date(c.visit_date).toLocaleDateString('en-GB') : '', 'Name': c.name, 'Phone': c.phone || '', 'Project': c.project || '', 'Properties': props, 'Budget': c.budget || '', 'Notes': c.notes || '' };
     });
-
-    exportRowsToCsv({ rows: exportData, fileName: 'PropEmpire_Visited_Clients.csv' });
-  };
-
-  useEffect(() => {
-    loadClients();
-  }, []);
-
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    if (!newClient.name) return;
-    try {
-      // Store array as JSON string for simple Supabase compatibility if needed
-      const dataToSave = { 
-        ...newClient, 
-        properties: JSON.stringify(newClient.properties) 
-      };
-      await saveVisitedClient(dataToSave);
-      setNewClient(initialForm);
-      setIsAdding(false);
-      loadClients();
-    } catch (err) {
-      console.error("Failed to save:", err);
-      alert("Failed to save visited client.");
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await deleteVisitedClient(id);
-      setClientToDelete(null);
-      loadClients();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete visited client: " + err.message);
-    }
-  };
-
-  const toggleExpand = (id) => {
-    if (expandedId === id) setExpandedId(null);
-    else setExpandedId(id);
-  }
-
-  const toggleProperty = (propOption) => {
-    setNewClient(prev => {
-      const isSelected = prev.properties.includes(propOption);
-      if (isSelected) {
-        return { ...prev, properties: prev.properties.filter(p => p !== propOption) };
-      } else {
-        return { ...prev, properties: [...prev.properties, propOption] };
-      }
-    });
-  };
-
-  const propertyOptions = ['1 BHK', '2 BHK', '3 BHK', '4 BHK', 'Villa', 'Plot', 'Commercial'];
-
-  const filteredClients = clients.filter(client => {
-    // Text search
-    const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (client.phone && client.phone.includes(searchQuery));
-    
-    // Date filter
-    let matchesDate = true;
-    if (dateFilterFrom || dateFilterTo) {
-      const clientDate = new Date(client.visit_date);
-      clientDate.setHours(0,0,0,0);
-      
-      if (dateFilterFrom) {
-        const fromD = new Date(dateFilterFrom);
-        fromD.setHours(0,0,0,0);
-        if (clientDate < fromD) matchesDate = false;
-      }
-      if (dateFilterTo) {
-        const toD = new Date(dateFilterTo);
-        toD.setHours(0,0,0,0);
-        if (clientDate > toD) matchesDate = false;
-      }
-    }
-
-    return matchesSearch && matchesDate;
-  });
-
-  const formatWaNumber = (phone) => {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length === 10) return `91${digits}`;
-    return digits;
-  };
-
-  const renderProperties = (propsData) => {
-    if (!propsData) return 'N/A';
-    let arr = [];
-    if (Array.isArray(propsData)) arr = propsData;
-    else if (typeof propsData === 'string') {
-      try {
-        arr = JSON.parse(propsData);
-        if (!Array.isArray(arr)) arr = [propsData];
-      } catch(e) {
-        arr = [propsData];
-      }
-    }
-    
-    if (arr.length === 0) return 'N/A';
-    return arr.map((p, i) => (
-      <span key={i} style={{ display: 'inline-block', background: 'var(--primary-blue)', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', marginRight: '4px', marginBottom: '4px' }}>
-        {p}
-      </span>
-    ));
+    exportRowsToCsv({ rows: data, fileName: 'PropEmpire_Visited.csv' });
   };
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '4rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
-          <MapPin size={28} color="var(--primary-blue)" /> 
-          Visited Clients
-        </h1>
+    <div>
+      <div className="flex items-center justify-between mb-16">
+        <h1 style={{ margin: 0 }}>Visits</h1>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
-        <button className="btn btn-secondary" onClick={handleExportCSV} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--surface-color)', border: '1px solid var(--border-color)' }}>
-          <FileText size={18} color="var(--primary-blue)" /> Export CSV
-        </button>
-        <button className="btn btn-secondary" onClick={handleExportExcel} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--surface-color)', border: '1px solid var(--border-color)' }}>
-          <FileText size={18} color="#10b981" /> Export Excel
-        </button>
-        <button className="btn btn-primary" onClick={() => setIsAdding(!isAdding)} style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.875rem', fontSize: '1rem' }}>
-          <UserPlus size={20} /> Log New Visit
-        </button>
+      <div className="grid-2 mb-12">
+        <button className="btn btn-secondary" onClick={handleExportCsv} style={{ padding: '8px', fontSize: 12 }}><FileText size={14} /> CSV</button>
+        <button className="btn btn-secondary" onClick={handleExportExcel} style={{ padding: '8px', fontSize: 12 }}><FileText size={14} /> Excel</button>
+      </div>
+      <button className="btn btn-primary w-full mb-16" onClick={() => setIsAdding(!isAdding)}>
+        <Plus size={18} /> Log New Visit
+      </button>
+
+      <div className="search-input-wrap">
+        <Search size={16} />
+        <input className="form-input" placeholder="Search name or phone..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      {/* Minimal Filters Area */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-        <div style={{ flex: '1 1 150px', position: 'relative' }}>
-          <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input 
-            type="text" 
-            className="form-input" 
-            placeholder="Search name or mobile..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: '32px', marginBottom: 0, padding: '0.5rem 0.5rem 0.5rem 32px', fontSize: '0.875rem' }}
-          />
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexWrap: 'wrap', backgroundColor: 'var(--surface-color)', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-          <Filter size={14} color="var(--text-muted)" />
-          <input 
-            type="date" 
-            className="form-input" 
-            style={{ width: 'auto', marginBottom: 0, border: 'none', background: 'transparent', padding: '0.25rem', fontSize: '0.75rem' }}
-            value={dateFilterFrom}
-            onChange={(e) => setDateFilterFrom(e.target.value)}
-            title="From Date"
-          />
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>to</span>
-          <input 
-            type="date" 
-            className="form-input" 
-            style={{ width: 'auto', marginBottom: 0, border: 'none', background: 'transparent', padding: '0.25rem', fontSize: '0.75rem' }}
-            value={dateFilterTo}
-            onChange={(e) => setDateFilterTo(e.target.value)}
-            title="To Date"
-          />
-          {(dateFilterFrom || dateFilterTo) && (
-            <button 
-              onClick={() => { setDateFilterFrom(''); setDateFilterTo(''); }} 
-              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: '0.25rem' }}
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
+      <div className="flex items-center gap-8 mb-16" style={{ background: 'var(--bg)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+        <Filter size={14} style={{ color: 'var(--text-secondary)' }} />
+        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+          style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12, color: 'var(--text)', flex: 1 }} />
+        <span className="text-sm text-muted">to</span>
+        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+          style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 12, color: 'var(--text)', flex: 1 }} />
+        {(dateFrom || dateTo) && (
+          <button onClick={() => { setDateFrom(''); setDateTo(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}>
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       {isAdding && (
-        <form className="card animate-fade-in" style={{ marginBottom: '2rem' }} onSubmit={handleAdd}>
-          <h2 style={{ fontSize: '1.125rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Log New Site Visit</h2>
-          
-          <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Visit Date *</label>
-              <input type="date" className="form-input" value={newClient.visit_date} onChange={e => setNewClient({...newClient, visit_date: e.target.value})} required />
+        <form className="card mb-16" onSubmit={handleAdd}>
+          <div className="section-title">New Site Visit</div>
+          <div className="form-grid-2">
+            <div className="form-group">
+              <label className="form-label">Date *</label>
+              <input type="date" className="form-input" value={form.visit_date} onChange={e => setForm({...form, visit_date: e.target.value})} required />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Client Name *</label>
-              <input type="text" className="form-input" value={newClient.name} onChange={e => setNewClient({...newClient, name: e.target.value})} required />
+            <div className="form-group">
+              <label className="form-label">Name *</label>
+              <input type="text" className="form-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Mobile No *</label>
-              <input type="text" className="form-input" value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} required />
+            <div className="form-group">
+              <label className="form-label">Phone *</label>
+              <input type="text" className="form-input" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Project Showed</label>
-              <input type="text" className="form-input" placeholder="e.g. Mangalam Marvel" value={newClient.project} onChange={e => setNewClient({...newClient, project: e.target.value})} />
+            <div className="form-group">
+              <label className="form-label">Project</label>
+              <input type="text" className="form-input" value={form.project} onChange={e => setForm({...form, project: e.target.value})} />
             </div>
-            
-            <div className="form-group" style={{ marginBottom: 0, gridColumn: '1 / -1' }}>
-              <label className="form-label">Property Showed (Select multiple)</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.5rem' }}>
-                {propertyOptions.map(opt => {
-                  const isSelected = newClient.properties.includes(opt);
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="form-label">Properties Showed</label>
+              <div className="flex gap-8 flex-wrap" style={{ marginTop: 4 }}>
+                {PROPERTY_OPTIONS.map(opt => {
+                  const sel = form.properties.includes(opt);
                   return (
-                    <div 
-                      key={opt} 
-                      onClick={() => toggleProperty(opt)}
-                      style={{ 
-                        display: 'flex', alignItems: 'center', gap: '0.25rem', 
-                        cursor: 'pointer', padding: '0.25rem 0.5rem',
-                        border: isSelected ? '1px solid var(--primary-blue)' : '1px solid var(--border-color)',
-                        borderRadius: 'var(--radius-sm)',
-                        backgroundColor: isSelected ? 'var(--bg-color)' : 'transparent',
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      {isSelected ? <CheckSquare size={16} color="var(--primary-blue)" /> : <Square size={16} color="var(--text-muted)" />}
-                      <span style={{ color: isSelected ? 'var(--primary-blue)' : 'var(--text-main)' }}>{opt}</span>
+                    <div key={opt} onClick={() => toggleProp(opt)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: `1px solid ${sel ? 'var(--primary)' : 'var(--border)'}`, background: sel ? 'var(--primary-light)' : 'transparent', fontSize: 13 }}>
+                      {sel ? <CheckSquare size={14} color="var(--primary)" /> : <Square size={14} />}
+                      <span>{opt}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
-
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Client Budget</label>
-              <input type="text" className="form-input" placeholder="e.g. 50 Lacs" value={newClient.budget} onChange={e => setNewClient({...newClient, budget: e.target.value})} />
+            <div className="form-group">
+              <label className="form-label">Budget</label>
+              <input type="text" className="form-input" value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} />
             </div>
-            <div className="form-group" style={{ marginBottom: 0, gridColumn: '1 / -1' }}>
-              <label className="form-label">Notes / Feedback</label>
-              <textarea className="form-input" rows="2" placeholder="Any specific requirements or comments..." value={newClient.notes} onChange={e => setNewClient({...newClient, notes: e.target.value})}></textarea>
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="form-label">Notes</label>
+              <textarea className="form-input" rows="2" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
             </div>
           </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.5rem' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => setIsAdding(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Save Visited Client</button>
+          <div className="flex" style={{ gap: 8 }}>
+            <button type="button" className="btn btn-secondary flex-1" onClick={() => setIsAdding(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary flex-1">Save Visit</button>
           </div>
         </form>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {filteredClients.length === 0 ? (
-          <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <MapPin size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.5, color: 'var(--primary-blue)' }} />
-            <p>{clients.length === 0 ? 'No visited clients yet. Start by logging a visit!' : 'No clients match your filters.'}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {filtered.length === 0 ? (
+          <div className="empty-state" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 40 }}>
+            <MapPin size={40} />
+            <p>{clients.length === 0 ? 'No visits logged yet' : 'No matches'}</p>
           </div>
         ) : (
-          filteredClients.map(client => (
-            <div key={client.id} className="card" style={{ display: 'flex', flexDirection: 'column', padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-              
-              {/* Top Row: Date & Actions */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--bg-color)', padding: '0.25rem 0.75rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
-                  <Calendar size={14} color="var(--primary-blue)" />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: '600' }}>
-                    {new Date(client.visit_date).toLocaleDateString('en-GB')}
-                  </span>
+          filtered.map(client => (
+            <div key={client.id} className="card" style={{ padding: 14 }}>
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-8" style={{ background: 'var(--bg)', padding: '4px 10px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600 }}>
+                  <Calendar size={12} style={{ color: 'var(--primary)' }} />
+                  {new Date(client.visit_date).toLocaleDateString('en-GB')}
                 </div>
-                
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  <button onClick={() => toggleExpand(client.id)} style={{ background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '50%', color: 'var(--text-main)', cursor: 'pointer', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {expandedId === client.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                <div className="flex gap-8">
+                  <button onClick={() => setExpandedId(expandedId === client.id ? null : client.id)} className="btn btn-secondary" style={{ padding: '4px 6px', fontSize: 11 }}>
+                    {expandedId === client.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
-                  <button onClick={() => setClientToDelete(client)} style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '50%', color: '#ef4444', cursor: 'pointer', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Trash2 size={16} />
+                  <button onClick={() => setDeleteTarget(client)} className="btn btn-secondary" style={{ padding: '4px 6px', fontSize: 11, color: 'var(--danger)' }}>
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
 
-              {/* Client Info */}
-              <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-main)' }} onClick={() => toggleExpand(client.id)}>
-                {client.name} 
-              </h3>
-              
-              {client.project && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }} onClick={() => toggleExpand(client.id)}>
-                  <MapPin size={14} /> <span>{client.project}</span>
-                </div>
-              )}
+              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>{client.name}</div>
+              {client.project && <div className="flex items-center gap-8 text-sm text-muted mb-8"><MapPin size={12} /> {client.project}</div>}
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+              <div className="flex gap-8">
                 {client.phone && (
                   <>
-                    <a href={`tel:${client.phone}`} className="btn btn-secondary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.875rem', gap: '0.5rem', justifyContent: 'center' }}>
-                      <Phone size={16} color="var(--primary-blue)" /> Call
+                    <a href={`tel:${client.phone}`} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12, flex: 1 }}>
+                      <Phone size={14} /> Call
                     </a>
-                    <a href={`https://wa.me/${formatWaNumber(client.phone)}`} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.875rem', gap: '0.5rem', color: '#16a34a', borderColor: '#bbf7d0', backgroundColor: '#f0fdf4', justifyContent: 'center' }}>
-                      <MessageCircle size={16} /> WhatsApp
+                    <a href={`https://wa.me/${formatWa(client.phone)}`} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12, flex: 1, color: 'var(--success)', borderColor: '#bbf7d0', background: '#f0fdf4' }}>
+                      <MessageCircle size={14} /> WhatsApp
                     </a>
                   </>
                 )}
               </div>
 
-              {/* Expanded Details */}
               {expandedId === client.id && (
-                <div className="animate-fade-in" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed var(--border-color)', fontSize: '0.875rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', backgroundColor: 'var(--bg-color)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                  <div><strong style={{color:'var(--text-muted)', display: 'block', marginBottom: '6px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Properties:</strong> {renderProperties(client.properties)}</div>
-                  <div><strong style={{color:'var(--text-muted)', display: 'block', marginBottom: '6px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Budget:</strong> <span style={{ fontWeight: '600' }}>{client.budget || 'N/A'}</span></div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <strong style={{color:'var(--text-muted)', display: 'block', marginBottom: '6px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Notes:</strong> 
-                    <p style={{ margin: 0, whiteSpace: 'pre-line', color: 'var(--text-main)', lineHeight: '1.5' }}>{client.notes || 'No notes added.'}</p>
+                <div className="animate-fade-in" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed var(--border)', fontSize: 13 }}>
+                  <div className="form-grid-2">
+                    <div><strong className="text-muted">Properties:</strong> <div className="mt-8">{renderProps(client.properties)}</div></div>
+                    <div><strong className="text-muted">Budget:</strong> <div className="mt-8">{client.budget || 'N/A'}</div></div>
+                    <div style={{ gridColumn: '1 / -1' }}><strong className="text-muted">Notes:</strong> <div className="mt-8">{client.notes || 'N/A'}</div></div>
                   </div>
                 </div>
               )}
@@ -405,15 +223,14 @@ export default function VisitedClients() {
         )}
       </div>
 
-      {/* Custom Delete Confirmation Modal */}
-      {clientToDelete && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--surface-color)' }}>
-            <h3 style={{ marginTop: 0, color: '#ef4444' }}>Delete Visit</h3>
-            <p style={{ margin: '1rem 0' }}>Are you sure you want to permanently delete this visit for <strong>{clientToDelete.name}</strong>?</p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-              <button className="btn btn-secondary" onClick={() => setClientToDelete(null)}>Cancel</button>
-              <button className="btn btn-primary" style={{ backgroundColor: '#ef4444', border: 'none' }} onClick={() => handleDelete(clientToDelete.id)}>Yes, Delete</button>
+      {deleteTarget && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 style={{ color: 'var(--danger)' }}>Delete Visit</h2>
+            <p>Delete visit for <strong>{deleteTarget.name}</strong>?</p>
+            <div className="flex" style={{ gap: 8, marginTop: 16 }}>
+              <button className="btn btn-secondary flex-1" onClick={() => setDeleteTarget(null)}>Cancel</button>
+              <button className="btn btn-danger flex-1" onClick={() => handleDelete(deleteTarget.id)}>Delete</button>
             </div>
           </div>
         </div>

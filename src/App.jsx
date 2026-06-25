@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, FileText, Users, Settings as SettingsIcon, Bell, TrendingUp, Moon, Sun, MapPin, Image } from 'lucide-react';
+import { Home, TrendingUp, FileText, Users, Moon, Sun, Settings as SettingsIcon } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Deals from './pages/Deals';
 import CreateInvoice from './pages/CreateInvoice';
@@ -9,50 +9,34 @@ import Settings from './pages/Settings';
 import PropertyCards from './pages/PropertyCards';
 import logoImg from './assets/COMPANY_LOGO.png';
 
-function App() {
+const ALL_TABS = ['dashboard', 'deals', 'invoice', 'clients', 'visited', 'cards', 'settings'];
+const TABS = ['dashboard', 'deals', 'invoice', 'clients'];
+
+export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [editingInvoice, setEditingInvoice] = useState(null);
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.body.classList.add('dark-theme');
-    } else {
-      document.body.classList.remove('dark-theme');
-    }
+    document.body.classList.toggle('dark-theme', theme === 'dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
 
   useEffect(() => {
-    if (!window.location.hash) {
-      window.history.replaceState(null, '', '#dashboard');
-    } else {
-      const hashTab = window.location.hash.replace('#', '');
-      if (['dashboard', 'deals', 'invoice', 'clients', 'visited', 'settings', 'cards'].includes(hashTab)) {
-        setActiveTab(hashTab);
-      }
-    }
-
-    const handlePopState = () => {
-      const hashTab = window.location.hash.replace('#', '');
-      if (['dashboard', 'deals', 'invoice', 'clients', 'visited', 'settings', 'cards'].includes(hashTab)) {
-        setActiveTab(hashTab);
-      } else {
-        setActiveTab('dashboard');
-      }
+    const hash = window.location.hash.replace('#', '');
+    if (ALL_TABS.includes(hash)) setActiveTab(hash);
+    const handler = () => {
+      const h = window.location.hash.replace('#', '');
+      if (ALL_TABS.includes(h)) setActiveTab(h);
     };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
   }, []);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     window.history.pushState(null, '', `#${tab}`);
-    // Clear editing state if navigating away from invoice manually
-    if (tab !== 'invoice') {
-      setEditingInvoice(null);
-    }
+    if (tab !== 'invoice') setEditingInvoice(null);
   };
 
   const handleEditInvoice = (invoice) => {
@@ -60,60 +44,57 @@ function App() {
     handleTabChange('invoice');
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+  const renderPage = () => {
+    switch (activeTab) {
+      case 'dashboard': return <Dashboard onNavigate={handleTabChange} />;
+      case 'deals': return <Deals onEditInvoice={handleEditInvoice} />;
+      case 'invoice': return <CreateInvoice onNavigate={handleTabChange} editingInvoice={editingInvoice} setEditingInvoice={setEditingInvoice} />;
+      case 'clients': return <Clients />;
+      case 'visited': return <VisitedClients />;
+      case 'cards': return <PropertyCards />;
+      case 'settings': return <Settings />;
+      default: return <Dashboard onNavigate={handleTabChange} />;
+    }
   };
 
   return (
     <div className="app-layout">
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-        {/* Mobile Header */}
-        <header className="app-header">
-          <div className="app-logo">
-            <img src={logoImg} alt="PropEmpire" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
-            PropEmpire
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button onClick={toggleTheme} style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {theme === 'light' ? <Moon size={24} /> : <Sun size={24} />}
-            </button>
-            <SettingsIcon size={24} color="var(--text-muted)" onClick={() => handleTabChange('settings')} style={{ cursor: 'pointer' }} />
-          </div>
-        </header>
+      <header className="app-header">
+        <div className="app-logo">
+          <img src={logoImg} alt="PropEmpire" />
+          PropEmpire
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className="theme-toggle" onClick={() => handleTabChange('settings')}>
+            <SettingsIcon size={20} />
+          </button>
+          <button className="theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
+        </div>
+      </header>
 
-        {/* Main Content Area */}
-        <main className="main-content animate-fade-in">
-          {activeTab === 'dashboard' && <Dashboard onNavigate={handleTabChange} />}
-          {activeTab === 'deals' && <Deals onEditInvoice={handleEditInvoice} />}
-          {activeTab === 'invoice' && <CreateInvoice onNavigate={handleTabChange} editingInvoice={editingInvoice} setEditingInvoice={setEditingInvoice} />}
-          {activeTab === 'clients' && <Clients />}
-          {activeTab === 'visited' && <VisitedClients />}
-          {activeTab === 'settings' && <Settings />}
-          {activeTab === 'cards' && <PropertyCards />}
-        </main>
-      </div>
+      <main className="main-content animate-fade-in">
+        {renderPage()}
+      </main>
 
-      {/* Mobile Bottom Navigation */}
       <nav className="bottom-nav">
-        <a href="#dashboard" className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('dashboard'); }}>
-          <Home />
-          <span>Home</span>
-        </a>
-        <a href="#deals" className={`nav-item ${activeTab === 'deals' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('deals'); }}>
-          <TrendingUp />
-          <span>Deals</span>
-        </a>
-        <a href="#invoice" className={`nav-item ${activeTab === 'invoice' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('invoice'); }}>
-          <FileText />
-          <span>Invoice</span>
-        </a>
-        <a href="#clients" className={`nav-item ${activeTab === 'clients' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleTabChange('clients'); }}>
-          <Users />
-          <span>Clients</span>
-        </a>
+        {TABS.map(tab => {
+          const icons = { dashboard: Home, deals: TrendingUp, invoice: FileText, clients: Users };
+          const labels = { dashboard: 'Home', deals: 'Deals', invoice: 'Invoice', clients: 'Clients' };
+          const Icon = icons[tab];
+          return (
+            <button
+              key={tab}
+              className={`nav-item ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => handleTabChange(tab)}
+            >
+              <Icon />
+              <span>{labels[tab]}</span>
+            </button>
+          );
+        })}
       </nav>
     </div>
   );
 }
-
-export default App;
