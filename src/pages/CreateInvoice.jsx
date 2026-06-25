@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, FileText, Home, Download, Share2, MessageCircle, X, Eye } from 'lucide-react';
 import InvoiceTemplate from '../components/InvoiceTemplate';
-import { generateInvoicePdfBlob } from '../utils/invoiceTemplate';
+import { generateInvoicePdfBlob, formatINR } from '../utils/invoiceTemplate';
 import { saveInvoice, getProfile, getInvoices } from '../db';
 import { downloadPdfBlob } from '../utils/pdf';
 
@@ -202,16 +202,16 @@ export default function CreateInvoice({ onNavigate, editingInvoice, setEditingIn
         </div>
         <div style={{ marginTop: 16, padding: 12, background: 'var(--bg)', borderRadius: 'var(--radius-sm)' }}>
           <div className="flex justify-between mb-8">
-            <span className="text-sm">Brokerage</span>
-            <strong>₹ {calcBroker().toLocaleString('en-IN')}</strong>
+            <span className="text-sm">Brokerage Amount</span>
+            <strong>₹ {formatINR ? formatINR(calcBroker()) : calcBroker().toLocaleString('en-IN')}</strong>
           </div>
           <div className="flex justify-between mb-8">
-            <span className="text-sm">Bonus</span>
-            <strong>₹ {Number(form.executiveBonus).toLocaleString('en-IN')}</strong>
+            <span className="text-sm">Executive Bonus</span>
+            <strong>₹ {formatINR ? formatINR(Number(form.executiveBonus)) : Number(form.executiveBonus).toLocaleString('en-IN')}</strong>
           </div>
           <div className="flex justify-between" style={{ borderTop: '1px solid var(--border)', paddingTop: 8, fontSize: 16 }}>
-            <strong>Total</strong>
-            <strong className="amount">₹ {calcTotal().toLocaleString('en-IN')}</strong>
+            <strong>Total Amount</strong>
+            <strong className="amount" style={{ color: 'var(--primary)' }}>₹ {formatINR ? formatINR(calcTotal()) : calcTotal().toLocaleString('en-IN')}</strong>
           </div>
         </div>
       </div>
