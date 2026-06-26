@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/PropEmpire_App/sw.js', { scope: '/PropEmpire_App/' })})}
